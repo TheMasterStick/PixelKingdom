@@ -27,7 +27,7 @@ function appearanceControls(p, mode) {
   return `<div class="appearance-controls">${Object.entries(APPEARANCE_OPTIONS)
     .map(
       ([key, values]) =>
-        `<div><label for="appearance-${mode}-${key}">${key[0].toUpperCase() + key.slice(1)}</label><select id="appearance-${mode}-${key}" data-appearance-part="${key}" data-appearance-mode="${mode}">${values.map((label, i) => `<option value="${i}" ${a[key] === i ? 'selected' : ''}>${label}</option>`).join('')}</select></div>`,
+        `<div><label for="appearance-${mode}-${key}">${key === 'outfit' ? 'Clothing line' : key[0].toUpperCase() + key.slice(1)}</label><select id="appearance-${mode}-${key}" data-appearance-part="${key}" data-appearance-mode="${mode}">${values.map((label, i) => `<option value="${i}" ${a[key] === i ? 'selected' : ''}>${label}</option>`).join('')}</select></div>`,
     )
     .join(
       '',

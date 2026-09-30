@@ -1,0 +1,103 @@
+<!doctype html><meta charset="utf-8" /><title>PixelKingdom clothing lines</title>
+<style>
+  body {
+    background: #172125;
+    color: #e5ddc8;
+    font: 14px system-ui;
+    margin: 20px;
+  }
+  h1 {
+    font: 28px Georgia;
+    margin: 0 0 8px;
+  }
+  p {
+    color: #b5bdb7;
+  }
+  #grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 12px;
+  }
+  article {
+    background: #28332e;
+    border: 1px solid #776647;
+    text-align: center;
+  }
+  h2 {
+    font: 20px Georgia;
+    margin: 12px 0 0;
+  }
+  img {
+    width: 100%;
+    height: 310px;
+    object-fit: contain;
+  }
+  article p {
+    margin: 0 0 10px;
+  }
+  label {
+    display: inline-block;
+    margin: 10px 22px 10px 0;
+  }
+  .figure {
+    position: relative;
+  }
+  .guides .figure:after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    border-left: 1px solid #8ddd8d88;
+    pointer-events: none;
+  }
+</style>
+<h1>PixelKingdom · Five clothing lines</h1>
+<p>
+  Live modular composition: new clothed bodies with their own necks, existing separate heads and
+  facial features.
+</p>
+<label><input id="guides" type="checkbox" /> Show center alignment guide</label>
+<label
+  >Skin
+  <select id="skin">
+    <option value="0">Fair</option>
+    <option value="1">Warm</option>
+    <option value="2">Olive</option>
+    <option value="3">Deep</option>
+  </select></label
+>
+<label><input id="broad" type="checkbox" /> Broader heads and bodies</label>
+<div id="grid"></div>
+<script type="module">
+  import { composePortrait, portraitReady } from '../../src/portrait-render.js';
+  import { APPEARANCE_OPTIONS } from '../../src/appearance.js';
+  function show() {
+    if (!portraitReady()) return;
+    document.querySelector('#grid').innerHTML = [0, 2]
+      .flatMap((body) =>
+        APPEARANCE_OPTIONS.outfit.map((name, outfit) => {
+          const appearance = {
+            version: 2,
+            head: body + Number(document.querySelector('#broad').checked),
+            body: body + Number(document.querySelector('#broad').checked),
+            eyes: body ? 1 : 0,
+            nose: 0,
+            mouth: body ? 2 : 0,
+            hair: body ? 3 : 1,
+            beard: 0,
+            outfit,
+            skin: Number(document.querySelector('#skin').value),
+          };
+          return `<article><h2>${name}</h2><div class="figure"><img alt="${name}, ${body ? 'feminine' : 'masculine'} body" src="${composePortrait({ appearance })}"></div><p>${body ? 'Feminine' : 'Masculine'} body · Separate head</p></article>`;
+        }),
+      )
+      .join('');
+  }
+  window.addEventListener('portraits-ready', show);
+  show();
+  document.querySelector('#skin').onchange = show;
+  document.querySelector('#broad').onchange = show;
+  document.querySelector('#guides').onchange = (e) =>
+    document.body.classList.toggle('guides', e.target.checked);
+</script>

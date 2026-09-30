@@ -80,23 +80,31 @@ Keyboard/mouse desktop browsers are the primary input target. The layout adapts 
 ## Modular portrait test
 
 Open **Character → Appearance** to independently choose head, body, eyes, nose,
-mouth, hair, beard, outfit and skin. The same controls appear during character
+mouth, hair, beard, clothing line and skin. The same controls appear during character
 creation. Choices are stored on each person and survive save/load; existing saves
 receive deterministic initial combinations. Companions can also be edited.
 
-Portraits are composed locally using exact crops from the two original premade
-parts sheets in `public/assets/portraits/`. There are no AI calls or pre-rendered
+Portraits are composed locally using exact crops from premade
+component sheets in `public/assets/portraits/`. There are no AI calls or pre-rendered
 complete-character presets. A cached Canvas compositor removes the sheet backdrop,
 normalizes skin shades and layers the selected parts. Small and large portraits
 use the same composition throughout the campaign UI.
 Heads are masked at the jaw and layered above the body, which supplies the neck.
 Measured chin anchors keep the smaller head and its features aligned as one group.
+The new `wardrobe-v2.png` supplies ten clothed bodies: masculine and feminine
+versions of Commoner, Citizen, Noble, Ruler and Warrior. Each includes a neck,
+with a measured center/attachment point. Lean/Broad and Slender/Sturdy are two
+size variants of these body styles. Existing outfit selections migrate once.
+See `docs/portrait-wardrobe-v2.md` for the generation prompt and asset contract.
 
 This is an initial modular art test: feature transitions, matching all hair/head
 combinations, and skin shading need further art refinement. Outfits are cosmetic
 and do not follow equipped armor yet. Battlefield sprites remain unchanged.
 
-Portrait alignment review: during local development, open
+Current clothing review: open `/tests/visual/wardrobe-review.html` locally for all
+ten combinations, a centerline guide, complexion options and broader builds.
+
+Historical portrait alignment review: during local development, open
 `/tests/visual/portraits.html` for the 36-combination before/after grid or
 `/tests/visual/portrait-review.html` for four representative comparisons.
 The old compositor is preserved there solely as a visual regression baseline.

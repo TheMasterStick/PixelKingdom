@@ -87,3 +87,20 @@ Scope: this is a working interface and feature expansion, not complete kingdom s
   16 beard fits, and a four-character before/after review, all composed from the
   exact same premade source parts. No full-character replacement illustrations.
 - Visual review covered the comparison grid and representative player portraits.
+
+
+## 2026-09-30 — New clothed bodies and five clothing lines
+
+- Generated a new transparent atlas of ten integrated clothed torsos, each with
+  its own neck: Commoner, Citizen, Noble, Ruler and Warrior in two body styles.
+- Removed the old body-plus-garment overlay from the active compositor. Heads and
+  all face/hair parts remain separate. Registered each torso by its measured neck
+  center and top; size variants scale uniformly about that attachment point.
+- Added Clothing line choices to creation and hero/companion appearance. Version-2
+  appearance migration translates old clothing IDs once and retains facial parts.
+- Restricted neck tinting to the exposed neck region to preserve fabric/metal color.
+- Added a live ten-body comparison page with center guides, skin and build controls.
+- Validation: 26 tests pass, production build passes, visual review of all five
+  lines in both body styles and broad/deep-skin combinations; creation selector
+  changes the live composed portrait. Clothing is still cosmetic. Existing facial
+  parts remain prototype art; this pass replaces the bodies, not the head atlas.

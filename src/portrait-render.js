@@ -1,6 +1,6 @@
 import { appearanceOf } from './appearance.js';
 
-// Exact source rectangles from the two premade art sheets; no generated portraits.
+// Source crops and measured attachment points from premade component atlases.
 const rects = {
   head: [
     [18, 45, 292, 416],
@@ -26,12 +26,6 @@ const rects = {
     [656, 1048, 263, 133],
     [954, 1047, 289, 137],
   ],
-  body: [
-    [20, 10, 287, 339],
-    [333, 10, 281, 339],
-    [647, 10, 274, 339],
-    [949, 10, 288, 339],
-  ],
   hair: [
     [35, 365, 259, 290],
     [333, 363, 281, 288],
@@ -44,13 +38,23 @@ const rects = {
     [661, 681, 241, 168],
     [958, 681, 283, 191],
   ],
-  outfit: [
-    [7, 877, 309, 351],
-    [319, 877, 310, 355],
-    [637, 877, 300, 354],
-    [948, 877, 292, 355],
-  ],
 };
+// Neck anchors are measured in atlas pixels, not inferred from cell centers.
+// A dressed torso includes its own neck, sleeves and shoulders: no second shirt
+// is stretched over a differently shaped body. Rows are masculine/feminine.
+const wardrobe = [
+  { rect: [0, 20, 373, 411], neck: [192, 30] },
+  { rect: [373, 20, 355, 411], neck: [552, 30] },
+  { rect: [728, 20, 330, 411], neck: [891, 30] },
+  { rect: [1058, 20, 357, 411], neck: [1234, 30] },
+  { rect: [1415, 20, 359, 411], neck: [1588, 30] },
+  { rect: [0, 441, 369, 420], neck: [189, 449] },
+  { rect: [369, 441, 359, 420], neck: [550, 449] },
+  { rect: [728, 441, 336, 420], neck: [890, 449] },
+  { rect: [1064, 441, 351, 420], neck: [1235, 449] },
+  { rect: [1415, 441, 359, 420], neck: [1590, 449] },
+];
+rects.wardrobe = wardrobe.map((part) => part.rect);
 const skinTones = [
   [225, 167, 124],
   [180, 113, 73],
@@ -72,7 +76,7 @@ export function portraitReady() {
 }
 if (typeof Image !== 'undefined') {
   Promise.all(
-    ['face', 'body'].map(
+    ['face', 'body', 'wardrobe'].map(
       (key) =>
         new Promise((resolve, reject) => {
           const img = new Image();
@@ -81,7 +85,10 @@ if (typeof Image !== 'undefined') {
             resolve();
           };
           img.onerror = reject;
-          img.src = `/assets/portraits/${key}-parts.png`;
+          img.src =
+            key === 'wardrobe'
+              ? '/assets/portraits/wardrobe-v2.png'
+              : `/assets/portraits/${key}-parts.png`;
         }),
     ),
   )
@@ -90,6 +97,15 @@ if (typeof Image !== 'undefined') {
       window.dispatchEvent(new Event('portraits-ready'));
     })
     .catch(() => window.dispatchEvent(new Event('portraits-error')));
+}
+function isNeckPixel(index, x, y) {
+  const [cx, top] = wardrobe[index].neck;
+  const dy = y - top,
+    dx = Math.abs(x - cx);
+  if (dy < -4) return false;
+  // Bound tinting to exposed skin so burgundy cloth, gold and leather retain color.
+  if (index < 5) return dy < 73 && dx < Math.min(57, 31 + Math.max(0, dy - 18) * 0.85);
+  return dy < 93 && dx < Math.min(67, 29 + Math.max(0, dy - 16) * 1.1);
 }
 function piece(kind, index, skin) {
   const key = `${kind}:${index}:${skin}`;
@@ -100,10 +116,20 @@ function piece(kind, index, skin) {
   c.width = w;
   c.height = h;
   const ctx = c.getContext('2d', { willReadFrequently: true });
-  ctx.drawImage(sheets[face ? 'face' : 'body'], x, y, w, h, 0, 0, w, h);
+  ctx.drawImage(
+    sheets[kind === 'wardrobe' ? 'wardrobe' : face ? 'face' : 'body'],
+    x,
+    y,
+    w,
+    h,
+    0,
+    0,
+    w,
+    h,
+  );
   const image = ctx.getImageData(0, 0, w, h),
     d = image.data;
-  if (!face) {
+  if (!face && kind !== 'wardrobe') {
     // Only remove slate connected to the outside of the cutout. A global colour
     // key was punching holes in blue surcoats and dark hair inside the artwork.
     const marked = new Uint8Array(w * h),
@@ -159,13 +185,15 @@ function piece(kind, index, skin) {
     }
     if (
       skin !== undefined &&
-      ['head', 'eyes', 'nose', 'body'].includes(kind) &&
+      (['head', 'eyes', 'nose'].includes(kind) ||
+        (kind === 'wardrobe' &&
+          isNeckPixel(index, x + ((i / 4) % w), y + Math.floor(i / 4 / w)))) &&
       r > g * 1.12 &&
       g > b * 1.12 &&
       r > 65
     ) {
       const source =
-        kind === 'body' ? faceBases[0] : kind === 'eyes' ? [204, 139, 98] : faceBases[index];
+        kind === 'wardrobe' ? [225, 167, 124] : kind === 'eyes' ? [204, 139, 98] : faceBases[index];
       const target = skinTones[skin];
       for (let ch = 0; ch < 3; ch++)
         d[i + ch] = Math.min(255, (d[i + ch] * target[ch]) / source[ch]);
@@ -288,19 +316,25 @@ export function composePortrait(p) {
     { x: 134, y: 38, w: 244, h: 350, eyes: 164, eyeY: 136, noseY: 179, mouthY: 247 },
   ];
   const f = profiles[a.head];
-  const bodyWidth = [410, 480, 390, 455][a.body];
-  // The body supplies the only neck. Align its measured cut edge to the head's
-  // chin, and draw the head ABOVE the torso instead of hiding it under collars.
-  const neckX = [147 / 287, 137 / 281, 131 / 274, 134.5 / 288][a.body];
-  const bodyY = 278;
-  draw('body', a.body, 256 - neckX * bodyWidth, bodyY, bodyWidth, 522, a.skin);
-  if (a.outfit) draw('outfit', a.outfit - 1, 248 - bodyWidth / 2, bodyY + 7, bodyWidth + 16, 520);
+  const torsoIndex = (a.body >= 2 ? 5 : 0) + a.outfit;
+  const torso = wardrobe[torsoIndex];
+  // Width variants scale around the attachment point, never around image bounds.
+  const bodyScale = [1.07, 1.17, 1.04, 1.13][a.body];
+  const neckTop = 282;
+  draw(
+    'wardrobe',
+    torsoIndex,
+    256 - (torso.neck[0] - torso.rect[0]) * bodyScale,
+    neckTop - (torso.neck[1] - torso.rect[1]) * bodyScale,
+    torso.rect[2] * bodyScale,
+    torso.rect[3] * bodyScale,
+    a.skin,
+  );
   const chinSourceY = [367, 368, 360, 361][a.head];
   const chin = f.y + ((chinSourceY - rects.head[a.head][1]) / rects.head[a.head][3]) * f.h;
   const headScale = 0.82;
-  const neckTop = bodyY + (12 / 339) * 522 + 4;
   ctx.save();
-  ctx.translate(256, neckTop);
+  ctx.translate(256, neckTop + 18);
   ctx.scale(headScale, headScale);
   ctx.translate(-256, -chin);
   ctx.save();

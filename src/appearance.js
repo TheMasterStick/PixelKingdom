@@ -6,7 +6,7 @@ export const APPEARANCE_OPTIONS = {
   mouth: ['Narrow', 'Broad', 'Soft smile', 'Full'],
   hair: ['None', 'Tousled', 'Wavy', 'Braided', 'Swept back'],
   beard: ['None', 'Short', 'Forked', 'Goatee', 'Full'],
-  outfit: ['Linen base', 'Belted tunic', 'Traveller', 'Mail', 'Doublet'],
+  outfit: ['Commoner', 'Citizen', 'Noble', 'Ruler', 'Warrior'],
   skin: ['Fair', 'Warm', 'Olive', 'Deep'],
 };
 export function initialAppearance(p) {
@@ -18,7 +18,7 @@ export function initialAppearance(p) {
   };
   const female = p.sex === 'female';
   return {
-    version: 1,
+    version: 2,
     head: (female ? 2 : 0) + pick(2),
     body: (female ? 2 : 0) + pick(2),
     eyes: pick(4),
@@ -26,7 +26,17 @@ export function initialAppearance(p) {
     mouth: pick(4),
     hair: 1 + pick(4),
     beard: female ? 0 : pick(5),
-    outfit: pick(5),
+    outfit:
+      p.title === 'Lord' || p.title === 'Lady'
+        ? 3
+        : p.role === 'Settlement steward'
+          ? 1
+          : p.role === 'Village elder'
+            ? 0
+            : p.type === 'companion' ||
+                ['militia', 'spearman', 'archer', 'veteran', 'bandit'].includes(p.type)
+              ? 4
+              : 0,
     skin: pick(4),
   };
 }
@@ -35,7 +45,11 @@ export function appearanceOf(p) {
     a = { ...fallback, ...p.appearance };
   for (const [key, values] of Object.entries(APPEARANCE_OPTIONS))
     if (!Number.isInteger(a[key]) || a[key] < 0 || a[key] >= values.length) a[key] = fallback[key];
-  a.version = 1;
+  // Translate the old linen/tunic/traveller/mail/doublet choices only once.
+  if (p.appearance && (p.appearance.version ?? 1) < 2) {
+    a.outfit = p.title === 'Lord' || p.title === 'Lady' ? 3 : [0, 1, 0, 4, 2][a.outfit];
+  }
+  a.version = 2;
   return a;
 }
 export function ensureAppearance(p) {

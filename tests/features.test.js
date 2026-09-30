@@ -200,3 +200,25 @@ test('modular appearance choices persist, migrate old people, and leave unrelate
   ensureFeatures(s);
   assert.deepEqual(p.appearance, changed);
 });
+
+test('clothing line migration retains selected parts and runs only once', async () => {
+  const { appearanceOf, ensureAppearance, setAppearancePart } =
+    await import('../src/appearance.js');
+  for (const [oldOutfit, newOutfit] of [0, 1, 0, 4, 2].entries()) {
+    const p = {
+      id: 'legacy-wardrobe',
+      appearance: { version: 1, head: 2, eyes: 3, body: 2, outfit: oldOutfit },
+    };
+    ensureAppearance(p);
+    assert.equal(p.appearance.outfit, newOutfit);
+    assert.equal(p.appearance.head, 2);
+    assert.equal(p.appearance.eyes, 3);
+    assert.equal(p.appearance.version, 2);
+    const migrated = { ...p.appearance };
+    ensureAppearance(p);
+    assert.deepEqual(p.appearance, migrated);
+    assert(setAppearancePart(p, 'outfit', 3));
+    assert.equal(appearanceOf(p).outfit, 3);
+  }
+  assert.equal(appearanceOf({ id: 'ruler', title: 'Lord' }).outfit, 3);
+});
