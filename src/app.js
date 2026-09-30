@@ -3,6 +3,9 @@ import {
   tickCampaign,
   travel,
   recruit,
+  troopOffers,
+  recruitmentQuote,
+  recruitTroops,
   promote,
   elevate,
   encodeSave,
@@ -40,6 +43,7 @@ let state = newCampaign(),
   hasCampaign = false,
   toastTimer,
   modalKind = '';
+let recruitmentCart = {};
 renderer.center(state);
 function toast(text) {
   $('#toast').textContent = text;
@@ -159,22 +163,34 @@ function updateUI() {
     .forEach((el) => el.classList.toggle('active', el.dataset.tab === tab));
   $('#save-btn').disabled = false;
 }
+function recruitmentPanel(t) {
+  const offers = troopOffers(t),
+    quote = recruitmentQuote(state, t, recruitmentCart);
+  return `<p class="muted recruit-intro">Enlist regular troops by type. Meet the individuals in your company roster.</p>${
+    offers
+      .map((o) => {
+        const selected = recruitmentCart[o.type] || 0;
+        const capacity = Math.min(
+          o.count - selected,
+          20 - state.party.length - quote.count,
+          Math.floor((state.gold - quote.cost) / o.price),
+        );
+        return `<div class="recruit-offer"><div class="row"><strong>${esc(o.label)}</strong><span class="badge">${o.count} available</span></div><small>${o.price} crowns each</small><div class="quantity-control"><button data-action="recruit-quantity" data-type="${o.type}" data-change="-1" aria-label="Remove ${esc(o.label)}" ${selected < 1 ? 'disabled' : ''}>−</button><output aria-label="${esc(o.label)} selected">${selected}</output><button data-action="recruit-quantity" data-type="${o.type}" data-change="1" aria-label="Add ${esc(o.label)}" ${capacity < 1 ? 'disabled' : ''}>+</button><button data-action="recruit-quantity" data-type="${o.type}" data-change="5" ${capacity < 1 ? 'disabled' : ''}>+5</button></div></div>`;
+      })
+      .join('') || '<p class="muted">No recruits available today.</p>'
+  }<div class="recruit-summary"><div class="row"><span>Company</span><strong>${state.party.length} → ${state.party.length + quote.count} / 20</strong></div><div class="row"><span>Recruitment cost</span><strong>${quote.cost} crowns</strong></div><button class="full primary" data-action="recruit-confirm" ${!quote.valid ? 'disabled' : ''}>Recruit ${quote.count} ${quote.count === 1 ? 'soldier' : 'soldiers'}</button>${quote.count ? '<button class="full quiet" data-action="recruit-reset">Reset selection</button>' : ''}</div>`;
+}
 function settlement(t) {
+  if (state.visiting !== t.id) recruitmentCart = {};
   state.mode = 'settlement';
   state.visiting = t.id;
   state.path = [];
   state.waiting = false;
   const q = state.quest;
   showModal(
-    `<div class="eyebrow">${esc(state.factions[t.faction].name)} · ${t.kind}</div><h1>${esc(t.name)}</h1><p class="muted">The campaign waits while you are here.</p><div class="two-col"><div><h3>The muster ground</h3>${
-      t.recruits
-        .slice(0, 5)
-        .map(
-          (p) =>
-            `<div class="roster-line"><div class="row"><span>${esc(p.name)}</span><button data-action="recruit" data-id="${p.id}" ${state.gold < 18 || state.party.length >= 20 ? 'disabled' : ''}>18 ♙</button></div><small>Levy · ${esc(p.traits[0])}</small></div>`,
-        )
-        .join('') || '<p class="muted">No recruits available today.</p>'
-    }</div><div><h3>The market</h3><p class="muted">${state.gold} crowns · ${state.food} provisions</p><button class="full" data-action="food" ${state.gold < 10 || t.stock < 10 ? 'disabled' : ''}>Buy 10 provisions · 10 ♙</button><small>${t.stock} provisions in stock</small><div class="divider"></div><h3>The tavern</h3>${t.companion ? `<p>${esc(t.companion.name)}<br><small>${esc(t.companion.traits[0])} · Companion</small></p><button class="full" data-action="recruit" data-id="${t.companion.id}" ${state.gold < 100 || state.party.length >= 20 ? 'disabled' : ''}>Hire companion · 100 ♙</button>` : '<p class="muted">No companions seeking work.</p>'}</div></div><div class="divider"></div><h3>Work on the roads</h3>${!q ? '<p class="muted">A brigand party is troubling the countryside. The steward offers 100 crowns for their defeat.</p><button data-action="contract">Accept contract</button>' : q.townId === t.id && q.done ? '<button class="primary" data-action="claim">Collect 100 crowns</button>' : '<p class="muted">You already have a contract. Check your campaign panel for details.</p>'}<div class="dialog-actions"><button class="primary" data-action="leave">Leave settlement</button></div>`,
+    `<div class="eyebrow">${esc(state.factions[t.faction].name)} · ${t.kind}</div><h1>${esc(t.name)}</h1><p class="muted">The campaign waits while you are here.</p><div class="two-col"><div><h3>The muster ground</h3>${recruitmentPanel(
+      t,
+    )}</div><div><h3>The market</h3><p class="muted">${state.gold} crowns · ${state.food} provisions</p><button class="full" data-action="food" ${state.gold < 10 || t.stock < 10 ? 'disabled' : ''}>Buy 10 provisions · 10 ♙</button><small>${t.stock} provisions in stock</small><div class="divider"></div><h3>The tavern</h3>${t.companion ? `<p>${esc(t.companion.name)}<br><small>${esc(t.companion.traits[0])} · Companion</small></p><button class="full" data-action="recruit" data-id="${t.companion.id}" ${state.gold < 100 || state.party.length >= 20 ? 'disabled' : ''}>Hire companion · 100 ♙</button>` : '<p class="muted">No companions seeking work.</p>'}</div></div><div class="divider"></div><h3>Work on the roads</h3>${!q ? '<p class="muted">A brigand party is troubling the countryside. The steward offers 100 crowns for their defeat.</p><button data-action="contract">Accept contract</button>' : q.townId === t.id && q.done ? '<button class="primary" data-action="claim">Collect 100 crowns</button>' : '<p class="muted">You already have a contract. Check your campaign panel for details.</p>'}<div class="dialog-actions"><button class="primary" data-action="leave">Leave settlement</button></div>`,
     'settlement',
   );
   updateUI();
@@ -246,12 +262,12 @@ function battleUI() {
         '',
       )}</div><div class="divider"></div><h3>Hero attachment</h3><select id="hero-attachment">${FORMATIONS.map((id) => `<option value="${id}" ${battle.units.find((u) => u.type === 'hero')?.formation === id ? 'selected' : ''}>${id === 'hero' ? 'Independent hero' : FORMATION_NAMES[id]}</option>`).join('')}</select><p class="muted" style="font-size:12px;margin-top:10px">Your hero fights automatically and follows the orders of their formation.</p>`;
   $('#right-panel').innerHTML =
-    `<div class="eyebrow">FIELD REPORT</div><h2>${battle.phase === 'deployment' ? 'Before the clash' : battle.paused ? 'Orders, commander.' : 'The lines meet.'}</h2><div class="stats"><div class="stat"><span>YOUR COMPANY</span><strong>${counts[0]} <small>/ ${battle.initial[0]}</small></strong></div><div class="stat"><span>BRIGANDS</span><strong>${counts[1]} <small>/ ${battle.initial[1]}</small></strong></div></div><div class="divider"></div><p class="muted" style="font-size:13px">Shield walls resist frontal attacks. Spear walls strengthen close combat. Archers skirmish away from nearby enemies. Charge releases soldiers to pursue.</p><p class="muted" style="font-size:13px">A formation’s line follows your drag direction. Draw top to bottom to face right; bottom to top to face left.</p><div class="notice"><span class="key">SPACE</span> Pause or resume<br><span class="key">1–3</span> Select formation<br><span class="key">C</span> Charge selected formation</div><button class="full danger" data-action="retreat">Retreat from battle</button>`;
+    `<div class="eyebrow">FIELD REPORT</div><h2>${battle.phase === 'deployment' ? 'Before the clash' : battle.paused ? 'Orders, commander.' : 'The lines meet.'}</h2><div class="stats"><div class="stat"><span>YOUR COMPANY</span><strong>${counts[0]} <small>/ ${battle.initial[0]}</small></strong></div><div class="stat"><span>BRIGANDS</span><strong>${counts[1]} <small>/ ${battle.initial[1]}</small></strong></div></div><div class="divider"></div><p class="muted" style="font-size:13px">Shield walls resist frontal attacks. Spear walls strengthen close combat. Archers skirmish away from nearby enemies. Charge releases soldiers to pursue.</p><p class="muted" style="font-size:13px">A formation’s line follows your drag direction. You deploy in the south; the enemy starts in the north. Draw left to right to face north, or right to left to face south.</p><div class="terrain-guide"><strong>The ground matters</strong><small>Trees and boulders block movement and shots. Woodland and bushes give ranged cover. Brush and wet ground slow troops.</small></div><div class="notice"><span class="key">SPACE</span> Pause or resume<br><span class="key">1–3</span> Select formation<br><span class="key">C</span> Charge selected formation</div><button class="full danger" data-action="retreat">Retreat from battle</button>`;
   $('#location-label').innerHTML =
-    `<div class="eyebrow">TACTICAL BATTLE</div><h2>The borderland fields</h2>`;
+    `<div class="eyebrow">TACTICAL BATTLE · NORTH ↑</div><h2>The wooded marches</h2>`;
   $('#map-caption').textContent =
     battle.phase === 'deployment'
-      ? 'Deploy within the blue area. Your front line follows the direction of your drag.'
+      ? 'Deploy in the southern blue zone. Draw left to right to face the enemy to the north.'
       : battle.paused
         ? 'Time is stopped. Give your orders.'
         : '';
@@ -377,9 +393,47 @@ document.addEventListener('click', (e) => {
       closeModal();
       save(true);
       break;
+    case 'recruit-quantity':
+      if (t) {
+        const type = el.dataset.type,
+          offer = troopOffers(t).find((o) => o.type === type);
+        if (offer) {
+          const quote = recruitmentQuote(state, t, recruitmentCart),
+            selected = recruitmentCart[type] || 0;
+          const maxAdd = Math.max(
+            0,
+            Math.min(
+              offer.count - selected,
+              20 - state.party.length - quote.count,
+              Math.floor((state.gold - quote.cost) / offer.price),
+            ),
+          );
+          const change = Number(el.dataset.change);
+          recruitmentCart[type] = Math.max(
+            0,
+            selected + (change > 0 ? Math.min(change, maxAdd) : change),
+          );
+          settlement(t);
+        }
+      }
+      break;
+    case 'recruit-reset':
+      recruitmentCart = {};
+      if (t) settlement(t);
+      break;
+    case 'recruit-confirm':
+      if (t) {
+        if (recruitTroops(state, t, recruitmentCart))
+          toast('Soldiers enlisted. Their names are in your company roster.');
+        else toast('Check available troops, funds, and company capacity.');
+        recruitmentCart = {};
+        settlement(t);
+      }
+      break;
     case 'recruit':
       if (t) {
         if (!recruit(state, t, id)) toast('Recruitment is unavailable.');
+        recruitmentCart = {};
         settlement(t);
       }
       break;

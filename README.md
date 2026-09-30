@@ -14,7 +14,7 @@ A browser-first, single-player medieval campaign and formation tactics prototype
 ## First journey
 
 1. Choose a name, seed, and background.
-2. Enter your starting settlement, hire levies and a companion, and accept a road-clearing contract.
+2. Enter your starting settlement, choose a quantity of levies, hire a companion, and accept a road-clearing contract.
 3. Leave, locate the brigands, and click their marker to approach.
 4. Deploy formations, begin battle, pause with Space, and issue orders.
 5. Return for payment, inspect your company, promote experienced soldiers, and save.
@@ -36,7 +36,9 @@ A browser-first, single-player medieval campaign and formation tactics prototype
 | Battle | Space | Pause/resume after Begin Battle |
 | Battle | C | Charge selected formation |
 
-Drag top-to-bottom to face right, or bottom-to-top to face left. In deployment, orders are limited to the blue deployment region. The hero-attachment menu moves your hero into the selected formation or back into an independent unit. Companion commands are assigned through Company → Skills & equipment.
+Friendlies deploy in the south; enemies start in the north. Drag left-to-right to face north, or right-to-left to face south. In deployment, the entire formation stays inside the blue southern region. The hero-attachment menu moves your hero into the selected formation or back into an independent unit. Companion commands are assigned through Company → Skills & equipment.
+
+Trees and boulders block movement and shots. Soldiers route around solid obstacles; woodland and bushes provide ranged cover, while brush and mud slow movement. Settlement recruitment shows troop types, availability and quantities. Open Company after hiring to discover each soldier’s name and history. Companions remain individually named tavern hires.
 
 ## Saves
 
@@ -47,6 +49,8 @@ Manual saves and autosaves after creation, settlement exit, battle resolution, a
 - `src/core.js`: seeded RNG, identities, cultural name pools, person progression and combat stats.
 - `src/campaign.js`: world generation, A* routes, time/economy, roster changes, outcomes and saves.
 - `src/battle.js`: tactical formation state, fixed-step combat, local spatial indexing and morale.
+- `src/terrain.js`: seeded battlefield terrain, navigation, movement costs and cover.
+- `src/terrain-render.js`: cached terrain artwork generated from simulation geometry.
 - `src/render.js`: Canvas world and battlefield visualization, separate from simulation.
 - `src/app.js`: browser UI, input, dialogs, clock and persistence.
 
@@ -54,6 +58,6 @@ Simulation modules run in both Node and the browser without DOM access. This per
 
 ## Current boundaries
 
-This is a playable first slice, not the finished sandbox. The campaign has a 20-person cap, six preset-named factions, generated settlement locations/names, and a 192×128-tile world. Battles are open fields with simplified collision, immediate ranged damage, and no obstacle pathfinding. Faction resources and recruitment replenish through a basic daily model, but AI expansion, diplomacy, commerce, crafting, fief ownership, sieges, marriage, aging, and succession are not implemented. Family and dynasty records currently reserve persistent relationships only.
+This is a playable first slice, not the finished sandbox. The campaign has a 20-person cap, six preset-named factions, generated settlement locations/names, and a 192×128-tile world. Battles feature seeded woodland, bushes, rocks, mud and gravel with obstacle routing and simple cover. Unit collision and immediate ranged damage remain simplified; large-army terrain performance has not yet been established. Faction resources and recruitment replenish through a basic daily model, but AI expansion, diplomacy, commerce, crafting, fief ownership, sieges, marriage, aging, and succession are not implemented. Family and dynasty records currently reserve persistent relationships only.
 
 Keyboard/mouse desktop browsers are the primary input target. The layout adapts to smaller displays, but touch battlefield controls have not been validated.

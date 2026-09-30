@@ -351,6 +351,69 @@ export function tickCampaign(s, dt) {
   }
   return null;
 }
+// The settlement presents troop categories. Persistent people remain hidden until hired.
+export function troopOffers(t) {
+  const groups = new Map();
+  for (const p of t.recruits) {
+    if (p.type === 'hero' || p.type === 'companion') continue;
+    if (!groups.has(p.type))
+      groups.set(p.type, {
+        type: p.type,
+        label: TYPES[p.type].label,
+        count: 0,
+        price: TYPES[p.type].cost,
+      });
+    groups.get(p.type).count++;
+  }
+  return [...groups.values()];
+}
+export function recruitmentQuote(s, t, quantities) {
+  let count = 0,
+    cost = 0;
+  for (const [type, qty] of Object.entries(quantities)) {
+    if (
+      !Number.isInteger(qty) ||
+      qty < 0 ||
+      !TYPES[type] ||
+      ['hero', 'companion', 'bandit'].includes(type)
+    )
+      return { valid: false, count: 0, cost: 0 };
+    if (qty > t.recruits.filter((p) => p.type === type).length)
+      return { valid: false, count: 0, cost: 0 };
+    count += qty;
+    cost += qty * TYPES[type].cost;
+  }
+  return {
+    count,
+    cost,
+    valid:
+      count > 0 &&
+      s.mode === 'settlement' &&
+      s.visiting === t.id &&
+      s.party.length + count <= 20 &&
+      s.gold >= cost,
+  };
+}
+export function recruitTroops(s, t, quantities) {
+  const quote = recruitmentQuote(s, t, quantities);
+  if (!quote.valid) return false;
+  const remaining = { ...quantities },
+    selected = [];
+  for (const p of t.recruits)
+    if (remaining[p.type] > 0) {
+      selected.push(p);
+      remaining[p.type]--;
+    }
+  const ids = new Set(selected.map((p) => p.id));
+  t.recruits = t.recruits.filter((p) => !ids.has(p.id));
+  for (const p of selected) {
+    p.history.push({ day: s.day, event: 'Joined ' + s.dynasty.name });
+    s.party.push(p);
+  }
+  s.gold -= quote.cost;
+  log(s, `${quote.count} soldiers joined your company. Inspect the roster to meet them.`);
+  return true;
+}
 export function recruit(s, t, id) {
   if (s.mode !== 'settlement' || s.visiting !== t.id) return false;
   const p = t.recruits.find((p) => p.id === id) || t.companion;
@@ -362,7 +425,12 @@ export function recruit(s, t, id) {
   else t.recruits = t.recruits.filter((p) => p.id !== id);
   s.party.push(p);
   p.history.push({ day: s.day, event: 'Joined ' + s.dynasty.name });
-  log(s, p.name + ' joined your company.');
+  log(
+    s,
+    p.type === 'companion'
+      ? p.name + ' joined your company.'
+      : 'A ' + TYPES[p.type].label.toLowerCase() + ' joined your company.',
+  );
   return true;
 }
 export function promote(s, id, type) {

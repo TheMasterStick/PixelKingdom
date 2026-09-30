@@ -1,5 +1,6 @@
 import { WORLD_W, WORLD_H, tile } from './campaign.js';
-import { BW, BH } from './battle.js';
+import { BW, BH, SOUTH_DEPLOYMENT } from './battle.js';
+import { paintTerrain } from './terrain-render.js';
 import { random, hash } from './core.js';
 export class Renderer {
   constructor(canvas) {
@@ -266,27 +267,35 @@ export class Renderer {
     g.save();
     g.translate(this.battleOffsetX, this.battleOffsetY);
     g.scale(this.battleScale, this.battleScale);
-    g.fillStyle = '#7a8d60';
-    g.fillRect(0, 0, BW, BH);
-    const rng = random(4242);
-    for (let i = 0; i < 600; i++) {
-      g.fillStyle = i % 2 ? '#8e9d7033' : '#536d4733';
-      g.fillRect(rng() * BW, rng() * BH, 3 + rng() * 16, 2 + rng() * 12);
+    g.textAlign = 'left';
+    if (this.battleTerrain !== b.terrain) {
+      this.battleTerrain = b.terrain;
+      this.battleGround = paintTerrain(b.terrain);
     }
+    g.imageSmoothingEnabled = false;
+    g.drawImage(this.battleGround, 0, 0);
     if (b.phase === 'deployment') {
-      g.fillStyle = '#709cb226';
-      g.fillRect(0, 0, 450, BH);
-      g.strokeStyle = '#d4dab180';
-      g.setLineDash([10, 10]);
+      g.fillStyle = '#73b8d122';
+      g.fillRect(0, SOUTH_DEPLOYMENT, BW, BH - SOUTH_DEPLOYMENT);
+      g.strokeStyle = '#9ed3dcbb';
+      g.lineWidth = 2;
+      g.setLineDash([12, 9]);
       g.beginPath();
-      g.moveTo(450, 0);
-      g.lineTo(450, BH);
+      g.moveTo(0, SOUTH_DEPLOYMENT);
+      g.lineTo(BW, SOUTH_DEPLOYMENT);
       g.stroke();
       g.setLineDash([]);
-      g.fillStyle = '#edf0c7';
-      g.font = '16px Georgia';
-      g.fillText('YOUR DEPLOYMENT AREA', 35, 40);
+      g.fillStyle = '#d3eee7';
+      g.font = 'bold 16px system-ui';
+      g.fillText('SOUTH · YOUR DEPLOYMENT AREA', 24, BH - 22);
     }
+    g.textAlign = 'center';
+    g.font = 'bold 16px system-ui';
+    g.fillStyle = '#201d16aa';
+    g.fillRect(BW / 2 - 120, 12, 240, 31);
+    g.fillStyle = '#f0c3a3';
+    g.fillText('NORTH · ENEMY APPROACH', BW / 2, 33);
+    g.textAlign = 'left';
     for (const u of b.units)
       if (u.hp <= 0) {
         g.fillStyle = '#523f33aa';
@@ -302,6 +311,17 @@ export class Renderer {
       g.lineTo(f.x + (Math.cos(f.angle) * f.width) / 2, f.y + (Math.sin(f.angle) * f.width) / 2);
       g.stroke();
       g.setLineDash([]);
+      const fx = Math.sin(f.angle),
+        fy = -Math.cos(f.angle);
+      const ax = f.x + fx * 38,
+        ay = f.y + fy * 38;
+      g.beginPath();
+      g.moveTo(f.x, f.y);
+      g.lineTo(ax, ay);
+      g.moveTo(ax - fx * 10 - fy * 6, ay - fy * 10 + fx * 6);
+      g.lineTo(ax, ay);
+      g.lineTo(ax - fx * 10 + fy * 6, ay - fy * 10 - fx * 6);
+      g.stroke();
     }
     for (const u of b.units) {
       if (u.hp <= 0) continue;

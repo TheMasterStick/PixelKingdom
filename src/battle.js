@@ -1,6 +1,18 @@
 import { stats, createPerson, distance, clamp, random, hash } from './core.js';
-export const BW = 1400,
-  BH = 900;
+import {
+  BATTLE_WIDTH,
+  BATTLE_HEIGHT,
+  SOUTH_DEPLOYMENT,
+  generateBattleTerrain,
+  openPosition,
+  moveOnTerrain,
+  positionClear,
+  segmentClear,
+  terrainAt,
+} from './terrain.js';
+export const BW = BATTLE_WIDTH,
+  BH = BATTLE_HEIGHT;
+export { SOUTH_DEPLOYMENT };
 export const FORMATIONS = ['infantry', 'archers', 'hero'];
 export const FORMATION_NAMES = {
   infantry: 'Foot company',
@@ -28,25 +40,26 @@ export function createBattle(s, enemy) {
     projectiles: [],
     rng: random(hash(s.seed + ':' + enemy.id)),
     report: null,
+    terrain: generateBattleTerrain(s.seed + ':' + enemy.id),
   };
   for (const [i, id] of FORMATIONS.entries())
     b.formations[id] = {
       id,
       side: 0,
-      x: 230,
-      y: 340 + i * 110,
+      x: [570, 825, 700][i],
+      y: [710, 770, 830][i],
       width: id === 'hero' ? 20 : 120,
-      angle: Math.PI / 2,
+      angle: 0,
       stance: 'formation',
       leader: s.formationLeaders[id] || null,
     };
   b.formations.enemy = {
     id: 'enemy',
     side: 1,
-    x: 1080,
-    y: 430,
+    x: 700,
+    y: 150,
     width: Math.min(450, enemy.count * 9),
-    angle: -Math.PI / 2,
+    angle: Math.PI,
     stance: 'charge',
     leader: null,
   };
@@ -117,6 +130,21 @@ function slots(b) {
   for (const [id, units] of Object.entries(groups)) {
     const f = b.formations[id],
       cols = Math.max(1, Math.floor(f.width / 10));
+    if (b.phase === 'deployment' && f.side === 0) {
+      const rows = Math.ceil(units.length / cols),
+        depth = Math.max(0, rows - 1) * 10;
+      const half = Math.min(cols, units.length) * 5;
+      const extentX = Math.abs(Math.cos(f.angle)) * half;
+      const extentY = Math.abs(Math.sin(f.angle)) * half;
+      const rearX = -Math.sin(f.angle) * depth,
+        rearY = Math.cos(f.angle) * depth;
+      f.x = clamp(f.x, 15 + extentX - Math.min(0, rearX), BW - 15 - extentX - Math.max(0, rearX));
+      f.y = clamp(
+        f.y,
+        SOUTH_DEPLOYMENT + 10 + extentY - Math.min(0, rearY),
+        BH - 15 - extentY - Math.max(0, rearY),
+      );
+    }
     for (let i = 0; i < units.length; i++) {
       const row = Math.floor(i / cols),
         col = i % cols,
@@ -133,6 +161,14 @@ function slots(b) {
         15,
         BH - 15,
       );
+      const safe = openPosition(
+        b.terrain,
+        units[i].slotX,
+        units[i].slotY,
+        b.phase === 'deployment' && f.side === 0 ? SOUTH_DEPLOYMENT + 6 : 6,
+      );
+      units[i].slotX = safe.x;
+      units[i].slotY = safe.y;
     }
   }
   return groups;
@@ -149,7 +185,7 @@ export function orderLine(b, id, start, end) {
   if (!f || f.side) return;
   let x = (start.x + end.x) / 2,
     y = (start.y + end.y) / 2;
-  if (b.phase === 'deployment') x = Math.min(x, 450);
+  if (b.phase === 'deployment') y = Math.max(y, SOUTH_DEPLOYMENT + 10);
   f.x = clamp(x, 25, BW - 25);
   f.y = clamp(y, 25, BH - 25);
   const d = distance(start, end);
@@ -209,15 +245,8 @@ function nearest(u, grid, radius) {
       }
   return best;
 }
-function move(u, x, y, dt, mult = 1) {
-  const d = Math.hypot(x - u.x, y - u.y);
-  if (d > 0.5) {
-    const step = Math.min(d, u.speed * dt * mult);
-    u.x += ((x - u.x) / d) * step;
-    u.y += ((y - u.y) / d) * step;
-  }
-  u.x = clamp(u.x, 5, BW - 5);
-  u.y = clamp(u.y, 5, BH - 5);
+function move(b, u, x, y, dt, mult = 1) {
+  moveOnTerrain(b.terrain, u, x, y, dt, mult);
 }
 export function tickBattle(b, dt) {
   if (b.phase !== 'battle' || b.paused || b.result) return;
@@ -261,15 +290,17 @@ export function tickBattle(b, dt) {
     }
     const enemy = centers[1 - u.side],
       d = target ? distance(u, target) : Infinity,
-      engage = ['charge', 'skirmish'].includes(f.stance);
+      engage = ['charge', 'skirmish'].includes(f.stance),
+      clearShot = target && segmentClear(b.terrain, u, target, 1);
     if (f.stance === 'skirmish' && target && d < 85 && ranged) {
-      move(u, u.x + (u.x - target.x), u.y + (u.y - target.y), dt);
-    } else if (engage && target && d > u.range) {
-      move(u, target.x, target.y, dt);
+      move(b, u, u.x + (u.x - target.x), u.y + (u.y - target.y), dt);
+    } else if (engage && target && (d > u.range || !clearShot)) {
+      move(b, u, target.x, target.y, dt);
     } else if (engage && !target && enemy.n) {
-      move(u, enemy.x, enemy.y, dt);
+      move(b, u, enemy.x, enemy.y, dt);
     } else if (!engage && d > u.range) {
       move(
+        b,
         u,
         f.stance === 'hold' ? (u.holdX ?? u.slotX) : u.slotX,
         f.stance === 'hold' ? (u.holdY ?? u.slotY) : u.slotY,
@@ -277,11 +308,11 @@ export function tickBattle(b, dt) {
         f.stance === 'shield' ? 0.65 : 1,
       );
     }
-    if (target && d <= u.range && u.cooldown <= 0) {
+    if (target && d <= u.range && clearShot && u.cooldown <= 0) {
       const tf = b.formations[target.formation],
         frontal =
           (u.x - target.x) * Math.sin(tf.angle) + (u.y - target.y) * -Math.cos(tf.angle) > 0;
-      let defense = target.armor;
+      let defense = target.armor + (ranged ? terrainAt(b.terrain, target.x, target.y).cover : 0);
       if (tf.stance === 'shield' && frontal) defense += ranged ? 8 : 5;
       if (tf.stance === 'spear' && frontal && !ranged) defense += 3;
       const bonus = (buffs[f.id] || 0) * 0.7 + (f.stance === 'spear' && !ranged ? 2 : 0);
@@ -315,13 +346,18 @@ export function tickBattle(b, dt) {
           const dd = distance(u, v);
           if (dd > 0 && dd < 7) {
             const push = (7 - dd) * 0.35;
-            u.x += ((u.x - v.x) / dd) * push;
-            u.y += ((u.y - v.y) / dd) * push;
+            const nx = u.x + ((u.x - v.x) / dd) * push,
+              ny = u.y + ((u.y - v.y) / dd) * push;
+            if (positionClear(b.terrain, nx, ny)) {
+              u.x = nx;
+              u.y = ny;
+            }
             if (++checked >= 12) break outer;
           }
         }
   }
-  for (const u of b.units) if (u.routed && u.hp > 0) move(u, u.side === 0 ? 0 : BW, u.y, dt, 1.3);
+  for (const u of b.units)
+    if (u.routed && u.hp > 0) move(b, u, u.x, u.side === 0 ? BH - 5 : 5, dt, 1.3);
   b.projectiles = b.projectiles.filter((p) => (p.life -= dt) > 0);
   const counts = [0, 0];
   for (const u of b.units) if (u.hp > 0 && !u.routed) counts[u.side]++;

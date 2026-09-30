@@ -8,7 +8,9 @@ Campaign time advances while the player travels or explicitly waits, like Banner
 
 Combat is entirely RTS/Total War style. The player character is a hero/general unit who receives movement and stance orders and fights autonomously, independently or attached to a formation. There is no directional personal combat. Space stops battle time for issuing orders. Deployment precedes Begin Battle; drawing a line determines formation frontage and facing. Commands include hold, formation movement, shield wall, spear wall, skirmish, and charge. Companions can command formations and improve them through skills/talents. The long-term requirement is multi-thousand-soldier battles; a small first slice is not the final scale.
 
-Every soldier has a persistent ID, culturally assembled name, age, traits, history, equipment, XP and progression. Names are labels, not primary keys. Avoid repeated full names using a registry and fallback disambiguation. Promotion retains identity; prominent soldiers can become companions. Hero and companions gain individual skill/talent allocations. Individual and formation-wide talents both matter.
+Battle orientation is fixed: friendly deployment is south, the enemy begins north. Battle maps contain trees, bushes, rocks and other terrain, with clearings and approaches that support formation tactics. Obstacles, slower ground and cover should matter mechanically. Sword & Banner references guide the readable wooded battlefields and quantity-based recruitment.
+
+Normal settlement recruitment presents troop categories and quantities. Names are discovered afterward in the company roster; companions may be introduced individually in taverns. Every soldier has a persistent ID, culturally assembled name, age, traits, history, equipment, XP and progression. Names are labels, not primary keys. Avoid repeated full names using a registry and fallback disambiguation. Promotion retains identity; prominent soldiers can become companions. Hero and companions gain individual skill/talent allocations. Individual and formation-wide talents both matter.
 
 Soldiers can die permanently or survive wounded. First-slice player defeat means capture, ransom, losses, and recovery. Companions survive in this first chapter; a configurable death rule remains planned. Marriage, children, aging, dynasty succession, and diplomatic marriage are confirmed future systems, not optional discarded ideas.
 
@@ -20,7 +22,7 @@ Planned diplomacy: trade agreements, marriages, alliances, wars, protectorates, 
 
 ## Milestone sequence
 
-1. **The Long March:** character background, generated map, travel clock, settlements, named recruitment and companion, tactical deployment and battle, wounds/casualties, XP/promotions, equipment, save/load.
+1. **The Long March:** character background, generated map, travel clock, settlements, category-based recruitment, named company roster and companion, tactical deployment and battle, wounds/casualties, XP/promotions, equipment, save/load.
 2. **Living companies:** deeper character creation, individual biographies/traits influencing behavior, multiple troop trees, richer skills/talents, formation commanders, larger party tiers, battle camera and selection tools.
 3. **A world in motion:** resource-producing settlements, inventories, caravans, recruitment/equipment supply chains, purposeful faction parties, opportunity-driven quests, economic parity.
 4. **Land and allegiance:** crafting, construction, player-founded fiefs, sieges, capture, mercenary/vassal service, territory and diplomacy.

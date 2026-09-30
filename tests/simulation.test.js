@@ -111,7 +111,8 @@ test('battle deployment, hero attachment, and pause work without advancing campa
     b.units.find((u) => u.type === 'hero').maxHp * 0.5,
   );
   orderLine(b, 'infantry', { x: 650, y: 100 }, { x: 650, y: 240 });
-  assert.ok(b.formations.infantry.x <= 450);
+  assert.ok(b.units.filter((u) => u.side === 0).every((u) => u.y >= 650));
+  assert.ok(b.units.filter((u) => u.side === 1).every((u) => u.y < 250));
   attachHero(b, 'infantry');
   assert.equal(b.units[0].formation, 'infantry');
   const pos = b.units.map((u) => [u.x, u.y]);

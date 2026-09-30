@@ -22,3 +22,12 @@ Validation:
 Next priorities: richer formation control and battle camera; deeper backgrounds/talents; troop economics and faction supply chains; scalable armies; fiefs, diplomacy, and dynasties as described in docs/DESIGN.md.
 
 - Final browser checks also confirmed contract payment and earned soldier promotion.
+
+## 2026-09-30 — Wooded battlefields and company recruitment
+
+- Friendly formations deploy south facing north; enemies begin north facing south. Drawn frontage respects the full formation footprint and southern deployment boundary. Routing soldiers flee toward their own map edge.
+- Seeded woodland, pine/oak trees, bushes, boulders, mud, gravel and a central track. Trees and rocks block movement/shots; vegetation provides ranged cover and difficult ground slows movement. Cached terrain rendering and bounded route caching keep static work out of the frame loop.
+- Troop-category recruitment with availability, quantity controls, total cost and party capacity. Batch purchases preserve existing IDs, names and histories; names appear in Company, while companions remain named tavern hires. Existing save format is unchanged.
+- Six new regression tests cover anonymous offers/persistent identities, atomic recruitment validation, deployment bounds/facing, seeded terrain/cover, obstacle routing and blocked shots/pause. All 16 simulation tests pass.
+- Browser checks confirmed quantity purchase, post-hire named roster, south/north deployment, terrain visuals, drawn frontage, hero attachment and Space pause.
+- This remains the 20-person first slice. Large-army performance with the new terrain needs profiling before raising that limit.

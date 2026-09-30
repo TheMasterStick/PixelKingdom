@@ -663,3 +663,51 @@ a {
     display: none;
   }
 }
+
+.recruit-intro {
+  font-size: 13px;
+}
+.recruit-offer {
+  padding: 14px;
+  border: 1px solid #536247;
+  background: #26372b;
+  margin: 12px 0;
+}
+.recruit-offer .row {
+  margin-top: 0;
+}
+.quantity-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+.quantity-control output {
+  min-width: 32px;
+  text-align: center;
+  font-weight: bold;
+  color: var(--gold);
+}
+.quantity-control button {
+  min-width: 35px;
+  padding: 7px 9px;
+}
+.recruit-summary {
+  padding-top: 8px;
+  font-size: 13px;
+}
+.terrain-guide {
+  padding: 12px;
+  border: 1px solid #4d614b;
+  margin: 14px 0;
+}
+.terrain-guide strong {
+  display: block;
+  color: var(--gold);
+  margin-bottom: 8px;
+}
+.terrain-guide small {
+  display: block;
+  font-size: 12px;
+  line-height: 1.6;
+}
