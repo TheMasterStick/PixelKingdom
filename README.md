@@ -89,6 +89,8 @@ parts sheets in `public/assets/portraits/`. There are no AI calls or pre-rendere
 complete-character presets. A cached Canvas compositor removes the sheet backdrop,
 normalizes skin shades and layers the selected parts. Small and large portraits
 use the same composition throughout the campaign UI.
+Heads are masked at the jaw and layered above the body, which supplies the neck.
+Measured chin anchors keep the smaller head and its features aligned as one group.
 
 This is an initial modular art test: feature transitions, matching all hair/head
 combinations, and skin shading need further art refinement. Outfits are cosmetic

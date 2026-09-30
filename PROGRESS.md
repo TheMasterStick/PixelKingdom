@@ -77,8 +77,10 @@ Scope: this is a working interface and feature expansion, not complete kingdom s
 - Replaced shared oversized facial transforms with per-head face measurements:
   narrower eyes, nose-specific dimensions, raised mouths and mouth-anchored beards.
 - Fitted hair width to the selected skull; masked the bald crown beneath swept hair.
-- Removed shoulder remnants from head cutouts using a continuous neck taper and
-  raised torso/collar anchors to join the layers without a visible seam.
+- Removed the head atlas necks and shoulder remnants with per-head jaw masks.
+  The body supplies the only neck; each chin is aligned to its measured top edge.
+- Draw heads above the body and garments, with the head, hair and facial features
+  scaled together to 82% of the previous size. Center each body by its actual neck.
 - Replaced global backdrop colour deletion with edge-connected slate removal for
   garments/bodies, preserving blue surcoats. Removed enclosed slate in hair/beards.
 - Added developer comparison pages under tests/visual: 20 head/hair combinations,

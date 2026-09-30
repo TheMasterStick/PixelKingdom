@@ -170,15 +170,6 @@ function piece(kind, index, skin) {
       for (let ch = 0; ch < 3; ch++)
         d[i + ch] = Math.min(255, (d[i + ch] * target[ch]) / source[ch]);
     }
-    if (kind === 'head') {
-      const px = (i / 4) % w,
-        py = Math.floor(i / 4 / w);
-      if (py > h * 0.72) {
-        const t = Math.max(0, Math.min(1, (py / h - 0.72) / 0.19));
-        const half = w * (0.29 - 0.185 * t * t * (3 - 2 * t));
-        d[i + 3] *= Math.max(0, Math.min(1, (half - Math.abs(px - w / 2)) / 5));
-      }
-    }
     if (kind === 'eyes') {
       const px = (i / 4) % w,
         py = Math.floor(i / 4 / w);
@@ -201,6 +192,72 @@ function piece(kind, index, skin) {
     }
   }
   ctx.putImageData(image, 0, 0);
+  if (kind === 'head') {
+    // Follow the drawn jaw, not the atlas alpha: the source heads include a
+    // neck/shoulders behind the jaw. None of that belongs to the head layer.
+    const outlines = [
+      [
+        [18, 45],
+        [310, 45],
+        [310, 270],
+        [270, 270],
+        [250, 306],
+        [226, 338],
+        [194, 367],
+        [145, 367],
+        [115, 338],
+        [92, 305],
+        [72, 270],
+        [18, 270],
+      ],
+      [
+        [329, 46],
+        [621, 46],
+        [621, 272],
+        [584, 272],
+        [562, 311],
+        [513, 368],
+        [450, 368],
+        [410, 318],
+        [388, 272],
+        [329, 272],
+      ],
+      [
+        [648, 57],
+        [917, 57],
+        [917, 279],
+        [867, 279],
+        [846, 311],
+        [808, 350],
+        [798, 360],
+        [765, 360],
+        [750, 350],
+        [717, 310],
+        [699, 279],
+        [648, 279],
+      ],
+      [
+        [952, 61],
+        [1236, 61],
+        [1236, 270],
+        [1185, 270],
+        [1160, 310],
+        [1117, 361],
+        [1076, 361],
+        [1033, 310],
+        [1014, 270],
+        [952, 270],
+      ],
+    ];
+    ctx.globalCompositeOperation = 'destination-in';
+    ctx.beginPath();
+    outlines[index].forEach(([px, py], i) =>
+      i ? ctx.lineTo(px - x, py - y) : ctx.moveTo(px - x, py - y),
+    );
+    ctx.closePath();
+    ctx.fill();
+    ctx.globalCompositeOperation = 'source-over';
+  }
   pieces.set(key, c);
   return c;
 }
@@ -227,10 +284,25 @@ export function composePortrait(p) {
   const profiles = [
     { x: 132, y: 34, w: 248, h: 354, eyes: 166, eyeY: 140, noseY: 184, mouthY: 254, chin: 302 },
     { x: 120, y: 30, w: 272, h: 366, eyes: 180, eyeY: 143, noseY: 188, mouthY: 264, chin: 314 },
-    { x: 140, y: 35, w: 232, h: 354, eyes: 157, eyeY: 147, noseY: 191, mouthY: 263, chin: 310 },
-    { x: 134, y: 38, w: 244, h: 350, eyes: 164, eyeY: 146, noseY: 188, mouthY: 259, chin: 305 },
+    { x: 140, y: 35, w: 232, h: 354, eyes: 157, eyeY: 134, noseY: 178, mouthY: 243 },
+    { x: 134, y: 38, w: 244, h: 350, eyes: 164, eyeY: 136, noseY: 179, mouthY: 247 },
   ];
   const f = profiles[a.head];
+  const bodyWidth = [410, 480, 390, 455][a.body];
+  // The body supplies the only neck. Align its measured cut edge to the head's
+  // chin, and draw the head ABOVE the torso instead of hiding it under collars.
+  const neckX = [147 / 287, 137 / 281, 131 / 274, 134.5 / 288][a.body];
+  const bodyY = 278;
+  draw('body', a.body, 256 - neckX * bodyWidth, bodyY, bodyWidth, 522, a.skin);
+  if (a.outfit) draw('outfit', a.outfit - 1, 248 - bodyWidth / 2, bodyY + 7, bodyWidth + 16, 520);
+  const chinSourceY = [367, 368, 360, 361][a.head];
+  const chin = f.y + ((chinSourceY - rects.head[a.head][1]) / rects.head[a.head][3]) * f.h;
+  const headScale = 0.82;
+  const neckTop = bodyY + (12 / 339) * 522 + 4;
+  ctx.save();
+  ctx.translate(256, neckTop);
+  ctx.scale(headScale, headScale);
+  ctx.translate(-256, -chin);
   ctx.save();
   if (a.hair === 4) {
     // The swept-back cutout contains its own crown; exclude the bald dome
@@ -239,11 +311,9 @@ export function composePortrait(p) {
     ctx.rect(0, f.y + 48, 512, 640);
     ctx.clip();
   }
-  draw('head', a.head, f.x, f.y, f.w, f.h, a.skin);
+  const faceCenter = [150, 149, 133.5, 144.5][a.head] / rects.head[a.head][2];
+  draw('head', a.head, 256 - faceCenter * f.w, f.y, f.w, f.h, a.skin);
   ctx.restore();
-  const bodyWidth = [410, 480, 390, 455][a.body];
-  draw('body', a.body, 256 - bodyWidth / 2, 317, bodyWidth, 522, a.skin);
-  if (a.outfit) draw('outfit', a.outfit - 1, 248 - bodyWidth / 2, 324, bodyWidth + 16, 520);
   draw('eyes', a.eyes, 256 - f.eyes / 2, f.eyeY, f.eyes, 61, a.skin);
   const noseWidths = [48, 61, 48, 54],
     noseHeights = [72, 68, 77, 69];
@@ -287,6 +357,7 @@ export function composePortrait(p) {
       draw('hair', a.hair - 1, 256 - width / 2, 7, width, a.hair === 1 ? 292 : 282);
     }
   }
+  ctx.restore();
   const url = c.toDataURL('image/webp', 0.92);
   // Bound memory during repeated character-builder experiments.
   if (portraits.size >= 128) portraits.delete(portraits.keys().next().value);
