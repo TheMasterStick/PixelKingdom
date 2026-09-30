@@ -70,3 +70,18 @@ Scope: this is a working interface and feature expansion, not complete kingdom s
   hero/companion sheets; saved per-person component IDs with deterministic migration.
 - Art remains a prototype: some overlays/skin transitions need refinement and
   portrait clothing is cosmetic. No runtime AI image generation.
+
+
+## 2026-09-30 — Portrait alignment correction
+
+- Replaced shared oversized facial transforms with per-head face measurements:
+  narrower eyes, nose-specific dimensions, raised mouths and mouth-anchored beards.
+- Fitted hair width to the selected skull; masked the bald crown beneath swept hair.
+- Removed shoulder remnants from head cutouts using a continuous neck taper and
+  raised torso/collar anchors to join the layers without a visible seam.
+- Replaced global backdrop colour deletion with edge-connected slate removal for
+  garments/bodies, preserving blue surcoats. Removed enclosed slate in hair/beards.
+- Added developer comparison pages under tests/visual: 20 head/hair combinations,
+  16 beard fits, and a four-character before/after review, all composed from the
+  exact same premade source parts. No full-character replacement illustrations.
+- Visual review covered the comparison grid and representative player portraits.

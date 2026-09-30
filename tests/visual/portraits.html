@@ -1,0 +1,78 @@
+<!doctype html><meta charset="utf-8" /><title>Portrait alignment review</title>
+<style>
+  body {
+    background: #171e21;
+    color: #eee;
+    font: 14px system-ui;
+    margin: 16px;
+  }
+  h1 {
+    font-size: 22px;
+  }
+  #grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+  article {
+    background: #26312b;
+    padding: 8px;
+  }
+  article > div {
+    display: flex;
+    gap: 6px;
+  }
+  img {
+    width: calc(50% - 3px);
+    height: auto;
+  }
+  p {
+    margin: 6px;
+    font-size: 12px;
+  }
+</style>
+<h1>Actual compositor: before / after</h1>
+<p>Same component IDs in each pair. No generated complete portraits.</p>
+<div id="grid"></div>
+<script type="module">
+  import { composePortrait, portraitReady } from '../../src/portrait-render.js';
+  import { composePortrait as before, portraitReady as beforeReady } from './portrait-before.js';
+  const samples = [];
+  for (let head = 0; head < 4; head++)
+    for (let hair = 0; hair < 5; hair++)
+      samples.push({
+        head,
+        hair,
+        body: head,
+        eyes: head,
+        nose: head,
+        mouth: head,
+        beard: 0,
+        outfit: head % 5,
+        skin: head,
+      });
+  for (let head = 0; head < 4; head++)
+    for (let beard = 1; beard < 5; beard++)
+      samples.push({
+        head,
+        hair: 1,
+        body: head,
+        eyes: head,
+        nose: head,
+        mouth: head,
+        beard,
+        outfit: 3,
+        skin: head,
+      });
+  function show() {
+    if (!portraitReady() || !beforeReady()) return;
+    document.querySelector('#grid').innerHTML = samples
+      .map(
+        (appearance, i) =>
+          `<article><p>Head ${appearance.head + 1} · Hair ${appearance.hair} · skin ${appearance.skin + 1} · beard ${appearance.beard}</p><div><img alt="Before ${i}" src="${before({ appearance })}"><img alt="After ${i}" src="${composePortrait({ appearance })}"></div></article>`,
+      )
+      .join('');
+  }
+  window.addEventListener('portraits-ready', show);
+  show();
+</script>

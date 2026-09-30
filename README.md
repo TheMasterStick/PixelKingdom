@@ -93,3 +93,8 @@ use the same composition throughout the campaign UI.
 This is an initial modular art test: feature transitions, matching all hair/head
 combinations, and skin shading need further art refinement. Outfits are cosmetic
 and do not follow equipped armor yet. Battlefield sprites remain unchanged.
+
+Portrait alignment review: during local development, open
+`/tests/visual/portraits.html` for the 36-combination before/after grid or
+`/tests/visual/portrait-review.html` for four representative comparisons.
+The old compositor is preserved there solely as a visual regression baseline.

@@ -1,0 +1,58 @@
+<!doctype html><meta charset="utf-8" /><title>Portrait alignment review</title>
+<style>
+  body {
+    background: #171e21;
+    color: #eee;
+    font: 14px system-ui;
+    margin: 16px;
+  }
+  h1 {
+    font-size: 22px;
+  }
+  #grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  article {
+    background: #26312b;
+    padding: 6px;
+  }
+  article > div {
+    display: flex;
+    gap: 6px;
+  }
+  img {
+    width: calc(50% - 3px);
+    height: 320px;
+    object-fit: contain;
+  }
+  p {
+    margin: 6px;
+    font-size: 12px;
+  }
+</style>
+<h1>Actual compositor: before / after</h1>
+<p>Same component IDs in each pair. No generated complete portraits.</p>
+<div id="grid"></div>
+<script type="module">
+  import { composePortrait, portraitReady } from '../../src/portrait-render.js';
+  import { composePortrait as before, portraitReady as beforeReady } from './portrait-before.js';
+  const samples = [
+    { head: 0, hair: 1, body: 0, eyes: 0, nose: 0, mouth: 0, beard: 1, outfit: 2, skin: 0 },
+    { head: 2, hair: 3, body: 2, eyes: 1, nose: 0, mouth: 2, beard: 0, outfit: 0, skin: 0 },
+    { head: 1, hair: 4, body: 1, eyes: 2, nose: 1, mouth: 1, beard: 4, outfit: 4, skin: 1 },
+    { head: 3, hair: 2, body: 3, eyes: 3, nose: 3, mouth: 3, beard: 0, outfit: 2, skin: 3 },
+  ];
+  function show() {
+    if (!portraitReady() || !beforeReady()) return;
+    document.querySelector('#grid').innerHTML = samples
+      .map(
+        (appearance, i) =>
+          `<article><p>Head ${appearance.head + 1} · Hair ${appearance.hair} · skin ${appearance.skin + 1} · beard ${appearance.beard}</p><div><img alt="Before ${i}" src="${before({ appearance })}"><img alt="After ${i}" src="${composePortrait({ appearance })}"></div></article>`,
+      )
+      .join('');
+  }
+  window.addEventListener('portraits-ready', show);
+  show();
+</script>

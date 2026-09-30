@@ -1,4 +1,4 @@
-import { appearanceOf } from './appearance.js';
+import { appearanceOf } from '../../src/appearance.js';
 
 // Exact source rectangles from the two premade art sheets; no generated portraits.
 const rects = {
@@ -103,57 +103,12 @@ function piece(kind, index, skin) {
   ctx.drawImage(sheets[face ? 'face' : 'body'], x, y, w, h, 0, 0, w, h);
   const image = ctx.getImageData(0, 0, w, h),
     d = image.data;
-  if (!face) {
-    // Only remove slate connected to the outside of the cutout. A global colour
-    // key was punching holes in blue surcoats and dark hair inside the artwork.
-    const marked = new Uint8Array(w * h),
-      queue = new Int32Array(w * h);
-    let read = 0,
-      write = 0;
-    const add = (pixel) => {
-      if (marked[pixel]) return;
-      const i = pixel * 4,
-        r = d[i],
-        g = d[i + 1],
-        b = d[i + 2];
-      if (b - r < 5 || b - r > 25 || b - g < 3 || b - g > 22 || r > 70 || b > 90) return;
-      marked[pixel] = 1;
-      queue[write++] = pixel;
-    };
-    for (let x = 0; x < w; x++) {
-      add(x);
-      add((h - 1) * w + x);
-    }
-    for (let y = 0; y < h; y++) {
-      add(y * w);
-      add(y * w + w - 1);
-    }
-    while (read < write) {
-      const pixel = queue[read++],
-        x = pixel % w;
-      if (x) add(pixel - 1);
-      if (x + 1 < w) add(pixel + 1);
-      if (pixel >= w) add(pixel - w);
-      if (pixel + w < w * h) add(pixel + w);
-    }
-    for (let i = 0; i < marked.length; i++) if (marked[i]) d[i * 4 + 3] = 0;
-  }
   for (let i = 0; i < d.length; i += 4) {
     const r = d[i],
       g = d[i + 1],
       b = d[i + 2];
     // Discard near-transparent export noise; remove only the slate sheet backing.
-    const enclosedBackdrop =
-      ['hair', 'beard'].includes(kind) &&
-      r >= 25 &&
-      r <= 70 &&
-      b >= 40 &&
-      b <= 90 &&
-      b - r >= 5 &&
-      b - r <= 25 &&
-      b - g >= 3 &&
-      b - g <= 22;
-    if (d[i + 3] < 40 || enclosedBackdrop) {
+    if (d[i + 3] < 40 || (!face && b > r && b > g && b - r > 6 && b < 110 && r < 90)) {
       d[i + 3] = 0;
       continue;
     }
@@ -173,24 +128,10 @@ function piece(kind, index, skin) {
     if (kind === 'head') {
       const px = (i / 4) % w,
         py = Math.floor(i / 4 / w);
-      if (py > h * 0.72) {
-        const t = Math.max(0, Math.min(1, (py / h - 0.72) / 0.19));
-        const half = w * (0.29 - 0.185 * t * t * (3 - 2 * t));
+      if (py > h * 0.78) {
+        const half = w * (0.23 - 0.05 * ((py / h - 0.78) / 0.22));
         d[i + 3] *= Math.max(0, Math.min(1, (half - Math.abs(px - w / 2)) / 5));
       }
-    }
-    if (kind === 'eyes') {
-      const px = (i / 4) % w,
-        py = Math.floor(i / 4 / w);
-      const cx = px < w / 2 ? w * 0.245 : w * 0.755;
-      const radius = Math.hypot((px - cx) / (w * 0.245), (py - h * 0.52) / (h * 0.49));
-      d[i + 3] *= Math.max(0, Math.min(1, (1.06 - radius) / 0.22));
-    }
-    if (kind === 'nose') {
-      const px = (i / 4) % w,
-        py = Math.floor(i / 4 / w);
-      const radius = Math.hypot((px - w / 2) / (w * 0.52), (py - h * 0.55) / (h * 0.59));
-      d[i + 3] *= Math.max(0, Math.min(1, (1.05 - radius) / 0.25));
     }
     if (kind === 'eyes' || kind === 'nose' || kind === 'mouth') {
       // Soften skin-patch edges, keeping the actual eyes/nose/lips fully opaque.
@@ -222,70 +163,41 @@ export function composePortrait(p) {
   ctx.fillRect(0, 0, 512, 640);
   const draw = (kind, index, x, y, w, h, skin) =>
     ctx.drawImage(piece(kind, index, skin), x, y, w, h);
-  // Each head has its own measured face width and feature anchors. The atlas
-  // cells are not interchangeable bounding boxes: their margins and jaws differ.
-  const profiles = [
-    { x: 132, y: 34, w: 248, h: 354, eyes: 166, eyeY: 140, noseY: 184, mouthY: 254, chin: 302 },
-    { x: 120, y: 30, w: 272, h: 366, eyes: 180, eyeY: 143, noseY: 188, mouthY: 264, chin: 314 },
-    { x: 140, y: 35, w: 232, h: 354, eyes: 157, eyeY: 147, noseY: 191, mouthY: 263, chin: 310 },
-    { x: 134, y: 38, w: 244, h: 350, eyes: 164, eyeY: 146, noseY: 188, mouthY: 259, chin: 305 },
-  ];
-  const f = profiles[a.head];
-  ctx.save();
-  if (a.hair === 4) {
-    // The swept-back cutout contains its own crown; exclude the bald dome
-    // behind it instead of allowing skin to protrude above the silver hair.
-    ctx.beginPath();
-    ctx.rect(0, f.y + 48, 512, 640);
-    ctx.clip();
-  }
-  draw('head', a.head, f.x, f.y, f.w, f.h, a.skin);
-  ctx.restore();
+  draw('head', a.head, 126, 25, 260, 370, a.skin);
   const bodyWidth = [410, 480, 390, 455][a.body];
-  draw('body', a.body, 256 - bodyWidth / 2, 317, bodyWidth, 522, a.skin);
-  if (a.outfit) draw('outfit', a.outfit - 1, 248 - bodyWidth / 2, 324, bodyWidth + 16, 520);
-  draw('eyes', a.eyes, 256 - f.eyes / 2, f.eyeY, f.eyes, 61, a.skin);
-  const noseWidths = [48, 61, 48, 54],
-    noseHeights = [72, 68, 77, 69];
-  draw(
-    'nose',
-    a.nose,
-    256 - noseWidths[a.nose] / 2,
-    f.noseY,
-    noseWidths[a.nose],
-    noseHeights[a.nose],
-    a.skin,
-  );
-  const mouthWidths = [63, 72, 65, 70];
-  draw('mouth', a.mouth, 256 - mouthWidths[a.mouth] / 2, f.mouthY, mouthWidths[a.mouth], 28);
+  draw('body', a.body, 256 - bodyWidth / 2, 325, bodyWidth, 522, a.skin);
+  if (a.outfit) draw('outfit', a.outfit - 1, 248 - bodyWidth / 2, 332, bodyWidth + 16, 520);
+  // Fixed attachment anchors shared across the four compatible frontal head bases.
+  draw('eyes', a.eyes, 163, 152, 186, 75, a.skin);
+  draw('nose', a.nose, 224, 199, 64, 89, a.skin);
+  draw('mouth', a.mouth, 221, 282, 70, 31);
   if (a.beard) {
     const sizes = [
-      [152, 96],
-      [163, 149],
-      [117, 96],
-      [175, 135],
+      [154, 106],
+      [170, 158],
+      [135, 106],
+      [182, 145],
     ][a.beard - 1];
-    // Align the moustache/mouth opening, not the top edge of its atlas cell.
-    const sourceGap = [54, 52, 58, 55][a.beard - 1];
-    const top = f.mouthY + 12 - (sourceGap / rects.beard[a.beard - 1][3]) * sizes[1];
-    draw('beard', a.beard - 1, 256 - sizes[0] / 2, top, sizes[0], sizes[1]);
+    draw('beard', a.beard - 1, 256 - sizes[0] / 2, 263, sizes[0], sizes[1]);
   }
   if (a.hair) {
-    const skull = f.w / 248;
+    const boxes = [
+      [117, 0, 280, 319],
+      [111, 2, 289, 347],
+      [108, -2, 296, 386],
+      [96, 0, 325, 310],
+    ];
     if (a.hair === 2 || a.hair === 3) {
-      const img = piece('hair', a.hair - 1),
-        cut = Math.round(img.width * 0.34),
+      // Keep side locks at their native proportions while widening the forehead
+      // opening to the common face anchors; prevents braids covering the eyes.
+      const img = piece('hair', a.hair - 1);
+      const cut = Math.round(img.width * 0.34),
         center = img.width - cut * 2;
-      const gap = f.eyes + 8,
-        side = 77 * skull,
-        height = a.hair === 3 ? 375 : 345;
-      ctx.drawImage(img, 0, 0, cut, img.height, 256 - gap / 2 - side, 9, side, height);
-      ctx.drawImage(img, cut, 0, center, img.height, 256 - gap / 2, 9, gap, height);
-      ctx.drawImage(img, cut + center, 0, cut, img.height, 256 + gap / 2, 9, side, height);
-    } else {
-      const width = (a.hair === 1 ? 277 : 307) * skull;
-      draw('hair', a.hair - 1, 256 - width / 2, 7, width, a.hair === 1 ? 292 : 282);
-    }
+      const height = a.hair === 3 ? 386 : 347;
+      ctx.drawImage(img, 0, 0, cut, img.height, 86, 0, 76, height);
+      ctx.drawImage(img, cut, 0, center, img.height, 162, 0, 188, height);
+      ctx.drawImage(img, cut + center, 0, cut, img.height, 350, 0, 76, height);
+    } else draw('hair', a.hair - 1, ...boxes[a.hair - 1]);
   }
   const url = c.toDataURL('image/webp', 0.92);
   // Bound memory during repeated character-builder experiments.
