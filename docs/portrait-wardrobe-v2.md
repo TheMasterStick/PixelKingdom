@@ -11,7 +11,7 @@ independently selected parts. The source atlas is not a sheet of finished portra
 
 Atlas spacing is approximate. `src/portrait-render.js` records actual crop bounds
 and measured neck centers instead of trusting the requested cell sizes. Each neck
-top maps to y=282 on a 512 × 640 portrait; the chin overlaps at y=300. Torso size
+top maps to y=282 on a 512 × 640 portrait; the chin overlaps at y=314. Torso size
 variants use uniform scaling around that point. The old body atlas remains loaded
 for hair and beard components only. Clothing remains cosmetic, without stat effects.
 
@@ -33,3 +33,12 @@ Noble: rich deep burgundy tailored medieval tunic / modest long-sleeved burgundy
 Ruler: deep royal blue velvet ceremonial coat / royal blue long-sleeved gown, rich gold embroidered edging, ermine trim on mantle, central gold clasp or chain. Neck unobstructed, fur stays at shoulders.
 Warrior: practical steel plate cuirass over visible chainmail and burgundy gambeson, leather straps, sensible shoulder plates, gauntlets; same plausible protective armor for men and women, no breast cups.
 Style: beautiful readable detailed pixel illustration matching reference quality, realistic anatomical proportions, crisp material highlights, tasteful medieval clothing, consistent lighting. NO lettering. TRUE transparent background. Nothing else.
+
+
+## Face spacing correction
+
+The head group now sits 14 canvas pixels lower. The nostril base is placed at 70%
+and the lip seam at 79% of each head's actual crown-to-chin height. This excludes
+the original head atlas neck/shoulder area from the measurements. The moustache
+opening follows the lip seam. Review all four skull shapes, bald and beardless,
+at `tests/visual/face-spacing-review.html`, alongside the previous compositor.

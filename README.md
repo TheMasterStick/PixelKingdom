@@ -101,6 +101,9 @@ This is an initial modular art test: feature transitions, matching all hair/head
 combinations, and skin shading need further art refinement. Outfits are cosmetic
 and do not follow equipped armor yet. Battlefield sprites remain unchanged.
 
+Facial spacing review: `/tests/visual/face-spacing-review.html` shows each head
+shape before/after the raised nose/mouth and lower head placement.
+
 Current clothing review: open `/tests/visual/wardrobe-review.html` locally for all
 ten combinations, a centerline guide, complexion options and broader builds.
 

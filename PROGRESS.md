@@ -104,3 +104,15 @@ Scope: this is a working interface and feature expansion, not complete kingdom s
   lines in both body styles and broad/deep-skin combinations; creation selector
   changes the live composed portrait. Clothing is still cosmetic. Existing facial
   parts remain prototype art; this pass replaces the bodies, not the head atlas.
+
+
+## 2026-09-30 — Raise facial features and lower the head
+
+- Reviewed all four user screenshots showing the low nose/mouth and long neck.
+- Lowered the complete head group by 14 pixels on the 512 × 640 portrait canvas.
+- Replaced independent nose/mouth offsets with nostril-base and lip-seam landmarks
+  at 70%/79% of each skull's visible crown-to-chin height. The removed atlas neck
+  no longer contributes to face proportions; beards follow the new mouth line.
+- Preserved component selections and clothing. No save migration required.
+- Added before/after close-ups for every head shape, with bald/beardless and
+  hair/beard variants. Visual inspection verifies a visible chin below the lips.

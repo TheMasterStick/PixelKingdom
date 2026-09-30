@@ -1,4 +1,4 @@
-import { appearanceOf } from './appearance.js';
+import { appearanceOf } from '../../src/appearance.js';
 
 // Source crops and measured attachment points from premade component atlases.
 const rects = {
@@ -310,10 +310,10 @@ export function composePortrait(p) {
   // Each head has its own measured face width and feature anchors. The atlas
   // cells are not interchangeable bounding boxes: their margins and jaws differ.
   const profiles = [
-    { y: 34, w: 248, h: 354, eyes: 166, eyeY: 140 },
-    { y: 30, w: 272, h: 366, eyes: 180, eyeY: 143 },
-    { y: 35, w: 232, h: 354, eyes: 157, eyeY: 134 },
-    { y: 38, w: 244, h: 350, eyes: 164, eyeY: 136 },
+    { x: 132, y: 34, w: 248, h: 354, eyes: 166, eyeY: 140, noseY: 184, mouthY: 254, chin: 302 },
+    { x: 120, y: 30, w: 272, h: 366, eyes: 180, eyeY: 143, noseY: 188, mouthY: 264, chin: 314 },
+    { x: 140, y: 35, w: 232, h: 354, eyes: 157, eyeY: 134, noseY: 178, mouthY: 243 },
+    { x: 134, y: 38, w: 244, h: 350, eyes: 164, eyeY: 136, noseY: 179, mouthY: 247 },
   ];
   const f = profiles[a.head];
   const torsoIndex = (a.body >= 2 ? 5 : 0) + a.outfit;
@@ -332,14 +332,9 @@ export function composePortrait(p) {
   );
   const chinSourceY = [367, 368, 360, 361][a.head];
   const chin = f.y + ((chinSourceY - rects.head[a.head][1]) / rects.head[a.head][3]) * f.h;
-  // Locate the visible nostril base and lip seam within the actual skull height,
-  // not the original crop (which also contains a removed neck and shoulders).
-  const faceHeight = chin - f.y;
-  const noseBaseY = f.y + faceHeight * 0.7;
-  const mouthLineY = f.y + faceHeight * 0.79;
   const headScale = 0.82;
   ctx.save();
-  ctx.translate(256, neckTop + 32);
+  ctx.translate(256, neckTop + 18);
   ctx.scale(headScale, headScale);
   ctx.translate(-256, -chin);
   ctx.save();
@@ -360,13 +355,13 @@ export function composePortrait(p) {
     'nose',
     a.nose,
     256 - noseWidths[a.nose] / 2,
-    noseBaseY - noseHeights[a.nose] * [0.86, 0.84, 0.85, 0.84][a.nose],
+    f.noseY,
     noseWidths[a.nose],
     noseHeights[a.nose],
     a.skin,
   );
   const mouthWidths = [63, 72, 65, 70];
-  draw('mouth', a.mouth, 256 - mouthWidths[a.mouth] / 2, mouthLineY - 14, mouthWidths[a.mouth], 28);
+  draw('mouth', a.mouth, 256 - mouthWidths[a.mouth] / 2, f.mouthY, mouthWidths[a.mouth], 28);
   if (a.beard) {
     const sizes = [
       [152, 96],
@@ -376,7 +371,7 @@ export function composePortrait(p) {
     ][a.beard - 1];
     // Align the moustache/mouth opening, not the top edge of its atlas cell.
     const sourceGap = [54, 52, 58, 55][a.beard - 1];
-    const top = mouthLineY - 2 - (sourceGap / rects.beard[a.beard - 1][3]) * sizes[1];
+    const top = f.mouthY + 12 - (sourceGap / rects.beard[a.beard - 1][3]) * sizes[1];
     draw('beard', a.beard - 1, 256 - sizes[0] / 2, top, sizes[0], sizes[1]);
   }
   if (a.hair) {
