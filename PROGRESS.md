@@ -17,6 +17,8 @@ Validation:
 - 10 automated simulation tests pass: seeded generation/identity, clock rules, routes, recruitment, promotions, save roundtrip, deployment/attachment/pause, battle termination, defeat, and contract targeting.
 - Initial 2,000-unit Node simulation benchmark, 450 ticks / 15 simulated seconds: median 24.44 ms, p95 42.32 ms, max 75.07 ms on this runner. This does not establish acceptable browser performance or sustained large-battle behavior. More profiling, unit spacing, target acquisition, typed storage/workers, and rendering work will be needed.
 - Browser walkthrough passed: merchant creation, 5 levies + companion, contract, travel/encounter, drawn deployment, hero attachment, Space pause, charge, victory, contract fulfillment, and save/reload preserving all 7 people and rewards. Visual review of campaign and battlefield completed. Browser extension metadata errors were present; no game error surfaced during the walkthrough.
-- Follow-up fixes: hold orders stop at current unit positions, selected formation contrast, pursuit of moving brigands, and disabled campaign zoom controls during battle.
+- Follow-up fixes: hold orders stop at current unit positions, selected formation contrast, pursuit of moving brigands, disabled campaign zoom controls during battle, and hero leadership applying to an attached formation when no companion commands it.
 
 Next priorities: richer formation control and battle camera; deeper backgrounds/talents; troop economics and faction supply chains; scalable armies; fiefs, diplomacy, and dynasties as described in docs/DESIGN.md.
+
+- Final browser checks also confirmed contract payment and earned soldier promotion.

@@ -242,8 +242,9 @@ export function tickBattle(b, dt) {
       c.y /= c.n;
     }
   const buffs = {};
+  const hero = alive.find((u) => u.type === 'hero');
   for (const f of Object.values(b.formations)) {
-    const leader = byId.get(f.leader);
+    const leader = byId.get(f.leader) || (hero?.formation === f.id ? hero : null);
     buffs[f.id] = leader && leader.formation === f.id ? leader.leadership : 0;
   }
   for (const u of alive) {
