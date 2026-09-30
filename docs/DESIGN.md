@@ -30,3 +30,23 @@ Planned diplomacy: trade agreements, marriages, alliances, wars, protectorates, 
 6. **Grand warfare:** profile and progressively scale to multi-thousand battles; terrain tactics, cavalry, morale/cohesion, reinforcements, sieges, richer unit visuals.
 
 Scale work should continue across milestones rather than wait until the last step. Pixel sprites can replace the primitive renderer without changing persistent identities or simulation rules.
+
+## Interface reference direction — 30 September 2026
+
+Reviewed the ten additional Bannerlord screenshots supplied after the wooded-battlefield pass. They guide information hierarchy and interaction patterns, adapted to PixelKingdom's human medieval pixel presentation. These are future feature targets, not a claim that the pictured systems are implemented.
+
+| Reference screen | Direction for PixelKingdom |
+|---|---|
+| Character history question + final review | Multi-stage life-history questionnaire, visible stat/skill/talent effects, back navigation and a review of the completed biography before starting. Preserve the existing skill-point and talent-point model rather than copying Bannerlord's numbers. |
+| Encyclopedia | Searchable, linked people, clans, kingdoms and settlements; biography, relationships, ownership and event history. Show last-known location with the age of the report rather than implying perfect real-time knowledge. |
+| Player–noble/vassal barter | Two-sided offer panels, expandable categories, money and eligible items/assets/agreements, clear pending offer and explicit acceptance. Transfers must validate ownership and resources atomically. |
+| Equipment / shop / loot | Character selector and equipment slots between two inventories. Categories, quantities, comparison details, party capacity, total transaction cost, confirm/cancel. |
+| Town | Settlement identity and owner, local conditions/resources and notable residents; clear actions for recruitment, trade, tavern, work, keep and eventual arena/management. |
+| Village | A distinct rural menu and illustration, local notables, production and village work. Keep common actions consistent with towns without giving every village a town's facilities. |
+| Troops | Troop-type stacks with counts, health/readiness and promotion indicators; expand to persistent named individuals. Companions/hero remain individually selectable. Transfer panes become relevant with garrisons and other parties. |
+| Talents | Skill categories beside a readable progression path with prerequisites, available points, current rank, previews and individual/party/formation effects. |
+| Diplomacy | Faction list grouped by relation or war status; counterpart leaders, comparative strength, prisoners and war record, with proposals and their costs/requirements visible. Add trade, alliance, marriage, protectorate and mercenary options as their simulations arrive. |
+
+Keep the campaign-clock contract: visits and battles freeze the world. Dense menus should offer summaries and details without hiding names permanently or treating regular recruitment as companion selection. Use original interface/art assets rather than copying reference screenshots into game screens.
+
+UI reliability rule: periodic telemetry refreshes must preserve interactive DOM elements, hover, keyboard focus, open selections and scroll position. Changes to a clock or casualty count must not replace adjacent buttons. Keep action identities distinct when changing screens or modes.

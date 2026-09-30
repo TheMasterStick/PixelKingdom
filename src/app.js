@@ -24,6 +24,7 @@ import {
   FORMATION_NAMES,
 } from './battle.js';
 import { Renderer } from './render.js';
+import { updateHTML } from './ui-dom.js';
 const $ = (s) => document.querySelector(s),
   esc = (s) =>
     String(s ?? '').replace(
@@ -53,7 +54,7 @@ function toast(text) {
 }
 function showModal(html, kind = 'info') {
   modalKind = kind;
-  modal.innerHTML = html;
+  updateHTML(modal, html);
   if (!modal.open) modal.showModal();
 }
 function closeModal() {
@@ -124,7 +125,7 @@ function rightPanel() {
 }
 function unitCard(p) {
   const advanced = ['hero', 'companion'].includes(p.type);
-  return `<article class="card"><div class="row"><span class="badge">${TYPES[p.type].label}</span><small>LV ${p.level}</small></div><h3>${esc(p.name)}</h3><p class="muted">${esc(p.traits.join(' · '))} · ${p.age} years old${p.wounded ? ' · Wounded' : ''}</p><div class="row"><span>Condition</span><span>${p.health}%</span></div><div class="bar"><i class="health" style="width:${p.health}%"></i></div><div class="row"><span>Experience</span><span>${p.xp} / ${p.level * 35}</span></div><div class="row"><span>Battle record</span><span>${p.kills} kills</span></div><div class="card-actions">${p.level >= 2 ? TYPES[p.type].next.map((type) => `<button data-action="promote" data-id="${p.id}" data-type="${type}" ${state.gold < 25 ? 'disabled' : ''}>${TYPES[type].label} · 25 ♙</button>`).join('') : ''}${!advanced && p.level >= 3 ? `<button data-action="elevate" data-id="${p.id}" ${state.gold < 100 ? 'disabled' : ''}>Raise to companion · 100 ♙</button>` : ''}${advanced ? `<button data-action="character" data-id="${p.id}">Skills & equipment${p.skillPoints || p.talentPoints ? ' •' : ''}</button>` : ''}</div></article>`;
+  return `<article class="card" data-ui-key="${p.id}"><div class="row"><span class="badge">${TYPES[p.type].label}</span><small>LV ${p.level}</small></div><h3>${esc(p.name)}</h3><p class="muted">${esc(p.traits.join(' · '))} · ${p.age} years old${p.wounded ? ' · Wounded' : ''}</p><div class="row"><span>Condition</span><span>${p.health}%</span></div><div class="bar"><i class="health" style="width:${p.health}%"></i></div><div class="row"><span>Experience</span><span>${p.xp} / ${p.level * 35}</span></div><div class="row"><span>Battle record</span><span>${p.kills} kills</span></div><div class="card-actions">${p.level >= 2 ? TYPES[p.type].next.map((type) => `<button data-action="promote" data-id="${p.id}" data-type="${type}" ${state.gold < 25 ? 'disabled' : ''}>${TYPES[type].label} · 25 ♙</button>`).join('') : ''}${!advanced && p.level >= 3 ? `<button data-action="elevate" data-id="${p.id}" ${state.gold < 100 ? 'disabled' : ''}>Raise to companion · 100 ♙</button>` : ''}${advanced ? `<button data-action="character" data-id="${p.id}">Skills & equipment${p.skillPoints || p.talentPoints ? ' •' : ''}</button>` : ''}</div></article>`;
 }
 function showRoster() {
   return `<div class="eyebrow">${esc(state.dynasty.name)}</div><h2>Your company <small>(${state.party.length})</small></h2><p class="muted">Every name has a history. Surviving soldiers gain experience and can earn promotion.</p><div class="cards">${state.party.map(unitCard).join('')}</div>`;
@@ -138,15 +139,19 @@ function updateUI() {
     battleUI();
     return;
   }
-  $('#left-panel').innerHTML = leftPanel();
-  $('#right-panel').innerHTML = rightPanel();
+  updateHTML($('#left-panel'), leftPanel());
+  updateHTML($('#right-panel'), rightPanel());
   $('#party-count').textContent = state.party.length;
-  $('#location-label').innerHTML =
-    `<div class="eyebrow">CAMPAIGN · DAY ${state.day}</div><h2>The Borderlands</h2>`;
+  updateHTML(
+    $('#location-label'),
+    `<div class="eyebrow">CAMPAIGN · DAY ${state.day}</div><h2>The Borderlands</h2>`,
+  );
   $('#map-caption').textContent = '“A crown is a distant thing. For now, there is the road.”';
   const moving = state.path.length || state.waiting;
-  $('#map-bottom').innerHTML =
-    `<div><strong style="font:17px Georgia">Day ${state.day}</strong><div class="time-label">${String(Math.floor(state.hour)).padStart(2, '0')}:00 · ${state.mode === 'settlement' ? 'IN SETTLEMENT' : state.paused ? 'PAUSED' : moving ? 'TRAVELLING' : 'WORLD PAUSED'}</div></div><div class="controls"><button data-action="pause" title="Pause campaign">${state.paused ? '▶' : 'Ⅱ'}</button><button data-action="speed" data-speed="1" class="${state.speed === 1 ? 'active' : ''}">1×</button><button data-action="speed" data-speed="3" class="${state.speed === 3 ? 'active' : ''}">3×</button><button data-action="wait" class="${state.waiting ? 'active' : ''}">${state.waiting ? 'Stop waiting' : 'Wait'}</button></div><div class="legend"><span><i style="background:#e1c587"></i>Your company</span><span><i style="background:#cb7455"></i>Brigands</span></div>`;
+  updateHTML(
+    $('#map-bottom'),
+    `<div><strong style="font:17px Georgia">Day ${state.day}</strong><div class="time-label">${String(Math.floor(state.hour)).padStart(2, '0')}:00 · ${state.mode === 'settlement' ? 'IN SETTLEMENT' : state.paused ? 'PAUSED' : moving ? 'TRAVELLING' : 'WORLD PAUSED'}</div></div><div class="controls"><button data-action="pause" title="Pause campaign">${state.paused ? '▶' : 'Ⅱ'}</button><button data-action="speed" data-speed="1" class="${state.speed === 1 ? 'active' : ''}">1×</button><button data-action="speed" data-speed="3" class="${state.speed === 3 ? 'active' : ''}">3×</button><button data-action="wait" class="${state.waiting ? 'active' : ''}">${state.waiting ? 'Stop waiting' : 'Wait'}</button></div><div class="legend"><span><i style="background:#e1c587"></i>Your company</span><span><i style="background:#cb7455"></i>Brigands</span></div>`,
+  );
   $('#status').textContent =
     state.mode === 'settlement'
       ? 'Settlement visit · The world waits'
@@ -157,7 +162,7 @@ function updateUI() {
     'Click to travel · Scroll to zoom · Right-drag to pan · Space to pause';
   $('#overlay-view').hidden = tab === 'world';
   if (tab !== 'world')
-    $('#overlay-view').innerHTML = tab === 'party' ? showRoster() : showJournal();
+    updateHTML($('#overlay-view'), tab === 'party' ? showRoster() : showJournal());
   document
     .querySelectorAll('[data-tab]')
     .forEach((el) => el.classList.toggle('active', el.dataset.tab === tab));
@@ -240,7 +245,8 @@ function battleUI() {
   const counts = [0, 0];
   for (const u of battle.units) if (u.hp > 0 && !u.routed) counts[u.side]++;
   const f = battle.formations[battle.selected];
-  $('#left-panel').innerHTML =
+  updateHTML(
+    $('#left-panel'),
     `<div class="eyebrow">${battle.phase === 'deployment' ? 'DEPLOY YOUR COMPANY' : 'BATTLE COMMAND'}</div><h2>Hold the line.</h2><p class="muted" style="font-size:12px">Select a formation. Drag on the battlefield to draw its front line. Click to send it to a position.</p>${FORMATIONS.map(
       (id, i) => {
         const units = battle.units.filter((u) => u.formation === id && u.hp > 0 && !u.routed);
@@ -260,19 +266,26 @@ function battleUI() {
       )
       .join(
         '',
-      )}</div><div class="divider"></div><h3>Hero attachment</h3><select id="hero-attachment">${FORMATIONS.map((id) => `<option value="${id}" ${battle.units.find((u) => u.type === 'hero')?.formation === id ? 'selected' : ''}>${id === 'hero' ? 'Independent hero' : FORMATION_NAMES[id]}</option>`).join('')}</select><p class="muted" style="font-size:12px;margin-top:10px">Your hero fights automatically and follows the orders of their formation.</p>`;
-  $('#right-panel').innerHTML =
-    `<div class="eyebrow">FIELD REPORT</div><h2>${battle.phase === 'deployment' ? 'Before the clash' : battle.paused ? 'Orders, commander.' : 'The lines meet.'}</h2><div class="stats"><div class="stat"><span>YOUR COMPANY</span><strong>${counts[0]} <small>/ ${battle.initial[0]}</small></strong></div><div class="stat"><span>BRIGANDS</span><strong>${counts[1]} <small>/ ${battle.initial[1]}</small></strong></div></div><div class="divider"></div><p class="muted" style="font-size:13px">Shield walls resist frontal attacks. Spear walls strengthen close combat. Archers skirmish away from nearby enemies. Charge releases soldiers to pursue.</p><p class="muted" style="font-size:13px">A formation’s line follows your drag direction. You deploy in the south; the enemy starts in the north. Draw left to right to face north, or right to left to face south.</p><div class="terrain-guide"><strong>The ground matters</strong><small>Trees and boulders block movement and shots. Woodland and bushes give ranged cover. Brush and wet ground slow troops.</small></div><div class="notice"><span class="key">SPACE</span> Pause or resume<br><span class="key">1–3</span> Select formation<br><span class="key">C</span> Charge selected formation</div><button class="full danger" data-action="retreat">Retreat from battle</button>`;
-  $('#location-label').innerHTML =
-    `<div class="eyebrow">TACTICAL BATTLE · NORTH ↑</div><h2>The wooded marches</h2>`;
+      )}</div><div class="divider"></div><h3>Hero attachment</h3><select id="hero-attachment">${FORMATIONS.map((id) => `<option value="${id}" ${battle.units.find((u) => u.type === 'hero')?.formation === id ? 'selected' : ''}>${id === 'hero' ? 'Independent hero' : FORMATION_NAMES[id]}</option>`).join('')}</select><p class="muted" style="font-size:12px;margin-top:10px">Your hero fights automatically and follows the orders of their formation.</p>`,
+  );
+  updateHTML(
+    $('#right-panel'),
+    `<div class="eyebrow">FIELD REPORT</div><h2>${battle.phase === 'deployment' ? 'Before the clash' : battle.paused ? 'Orders, commander.' : 'The lines meet.'}</h2><div class="stats"><div class="stat"><span>YOUR COMPANY</span><strong>${counts[0]} <small>/ ${battle.initial[0]}</small></strong></div><div class="stat"><span>BRIGANDS</span><strong>${counts[1]} <small>/ ${battle.initial[1]}</small></strong></div></div><div class="divider"></div><p class="muted" style="font-size:13px">Shield walls resist frontal attacks. Spear walls strengthen close combat. Archers skirmish away from nearby enemies. Charge releases soldiers to pursue.</p><p class="muted" style="font-size:13px">A formation’s line follows your drag direction. You deploy in the south; the enemy starts in the north. Draw left to right to face north, or right to left to face south.</p><div class="terrain-guide"><strong>The ground matters</strong><small>Trees and boulders block movement and shots. Woodland and bushes give ranged cover. Brush and wet ground slow troops.</small></div><div class="notice"><span class="key">SPACE</span> Pause or resume<br><span class="key">1–3</span> Select formation<br><span class="key">C</span> Charge selected formation</div><button class="full danger" data-action="retreat">Retreat from battle</button>`,
+  );
+  updateHTML(
+    $('#location-label'),
+    `<div class="eyebrow">TACTICAL BATTLE · NORTH ↑</div><h2>The wooded marches</h2>`,
+  );
   $('#map-caption').textContent =
     battle.phase === 'deployment'
       ? 'Deploy in the southern blue zone. Draw left to right to face the enemy to the north.'
       : battle.paused
         ? 'Time is stopped. Give your orders.'
         : '';
-  $('#map-bottom').innerHTML =
-    `<div><strong>${battle.phase === 'deployment' ? 'Deployment' : battle.paused ? 'Battle paused' : 'Battle in progress'}</strong><div class="time-label">${Math.floor(battle.time / 60)}:${String(Math.floor(battle.time % 60)).padStart(2, '0')} elapsed · Campaign frozen</div></div><button class="primary" data-action="${battle.phase === 'deployment' ? 'begin-battle' : 'pause-battle'}">${battle.phase === 'deployment' ? 'Begin battle' : battle.paused ? 'Resume battle' : 'Pause · Space'}</button>`;
+  updateHTML(
+    $('#map-bottom'),
+    `<div><strong>${battle.phase === 'deployment' ? 'Deployment' : battle.paused ? 'Battle paused' : 'Battle in progress'}</strong><div class="time-label">${Math.floor(battle.time / 60)}:${String(Math.floor(battle.time % 60)).padStart(2, '0')} elapsed · Campaign frozen</div></div><button class="primary" data-action="${battle.phase === 'deployment' ? 'begin-battle' : 'pause-battle'}">${battle.phase === 'deployment' ? 'Begin battle' : battle.paused ? 'Resume battle' : 'Pause · Space'}</button>`,
+  );
   $('#overlay-view').hidden = true;
   $('#save-btn').disabled = true;
   $('#status').textContent = 'Formation command · Campaign time is frozen';
@@ -744,7 +757,7 @@ function frame(now) {
   renderer.draw(state, battle);
   uiTime += dt;
   if (uiTime > 0.6) {
-    if ((!modal.open || battle?.result) && document.activeElement.tagName !== 'SELECT') updateUI();
+    if (!modal.open || battle?.result) updateUI();
     uiTime = 0;
   }
   requestAnimationFrame(frame);

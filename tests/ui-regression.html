@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>PixelKingdom UI regression checks</title>
+    <style>
+      body {
+        font: 16px system-ui;
+        background: #17251f;
+        color: #e5e9de;
+        padding: 28px;
+      }
+      li {
+        margin: 10px;
+      }
+      .pass {
+        color: #9fe2ae;
+      }
+      .fail {
+        color: #ff9e96;
+      }
+      #fixture {
+        padding: 20px;
+        border: 1px solid #77816b;
+      }
+      button {
+        padding: 12px;
+      }
+      #summary {
+        font-size: 24px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Stable controls regression checks</h1>
+    <p>Real browser DOM checks for the live panel reconciler.</p>
+    <p id="summary">Running…</p>
+    <ol id="results"></ol>
+    <div id="fixture"></div>
+    <script type="module" src="./ui-regression.browser.js"></script>
+  </body>
+</html>

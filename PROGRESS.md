@@ -31,3 +31,11 @@ Next priorities: richer formation control and battle camera; deeper backgrounds/
 - Six new regression tests cover anonymous offers/persistent identities, atomic recruitment validation, deployment bounds/facing, seeded terrain/cover, obstacle routing and blocked shots/pause. All 16 simulation tests pass.
 - Browser checks confirmed quantity purchase, post-hire named roster, south/north deployment, terrain visuals, drawn frontage, hero attachment and Space pause.
 - This remains the 20-person first slice. Large-army performance with the new terrain needs profiling before raising that limit.
+
+## 2026-09-30 — Stable UI refresh fix
+
+- Root cause: the 600 ms UI refresh assigned whole-panel `innerHTML`, destroying and recreating hovered/pressed buttons. This restarted hover transitions and could disconnect a target between mouse-down and click.
+- Added a shared DOM reconciler: unchanged panels perform no writes; changed text/attributes update in place. Action/person keys preserve the correct controls in campaign, roster, settlement and battle panels. Native dropdowns now remain intact while telemetry refreshes.
+- Removed the workaround that stopped telemetry while a select held focus. Existing simulation timing, keyboard shortcuts and save format are unchanged.
+- Validation: 16 simulation tests, production build and 8 real-browser DOM regressions pass. Browser checks cover unchanged refreshes, a press spanning refreshes, counter/style/disabled updates, select focus/selection, roster identity, changed action identity, typed inputs and scroll retention.
+- Recorded all ten additional questionnaire, encyclopedia, barter, equipment, town, village, troop, talent and diplomacy references in docs/DESIGN.md as future design direction.

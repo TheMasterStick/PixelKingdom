@@ -9,6 +9,7 @@ A browser-first, single-player medieval campaign and formation tactics prototype
 - For development: `npm ci`, then `npm run dev`.
 - Production static bundle: `npm run build`. Serve `dist/` over HTTP.
 - Simulation checks: `npm test`.
+- UI regression checks: with the dev server running, open `/tests/ui-regression.html` for eight real-browser control-preservation checks.
 - Large-army simulation benchmark: `npm run benchmark` (2,000 units, not a frame-rate guarantee).
 
 ## First journey
@@ -53,6 +54,7 @@ Manual saves and autosaves after creation, settlement exit, battle resolution, a
 - `src/terrain-render.js`: cached terrain artwork generated from simulation geometry.
 - `src/render.js`: Canvas world and battlefield visualization, separate from simulation.
 - `src/app.js`: browser UI, input, dialogs, clock and persistence.
+- `src/ui-dom.js`: incremental panel updates that preserve interactive controls and focus.
 
 Simulation modules run in both Node and the browser without DOM access. This permits profiling and regression testing separately from rendering. A later desktop wrapper can reuse the browser client; none is currently included.
 
