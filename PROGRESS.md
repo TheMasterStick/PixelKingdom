@@ -57,3 +57,16 @@ Implemented from the full twenty-reference set:
 Validation: all 24 simulation/feature tests pass, including transaction conservation/atomicity, exact character-creation effects, equipment stats, treaty requirements, daily wages, talent effects, migration, commissions and ransom. Production build passes. Browser walkthrough covered creation/review, town navigation, purchase and recruitment, companion hire, quest acceptance, equip, talent allocation, gift/trade agreement, save restoration, encyclopedia search and village entries, and formation assignment.
 
 Scope: this is a working interface and feature expansion, not complete kingdom simulation. The twenty references are addressed through the applicable screen families; free-form noble/vassal barter, fief transfers, marriage, alliances, protectorates, sieges, detailed crafting/economy and player realm ownership still require future underlying systems. No decorative button claims to perform these actions. Company limit remains 20; thousand-unit terrain battles remain unverified.
+
+
+## 2026-09-30 — Actual modular portrait composition test
+
+- Integrated the premade blank heads, eye pairs, noses, mouths, bodies, hair,
+  beards and garments as two source atlases. Complete preview portraits are not used.
+- Added a local cached Canvas compositor with backdrop removal, skin normalization,
+  fixed feature anchors and shared portraits across creation, company, equipment,
+  taverns, rulers, notable characters and encyclopedia entries.
+- Added independent Appearance selectors to character creation and existing
+  hero/companion sheets; saved per-person component IDs with deterministic migration.
+- Art remains a prototype: some overlays/skin transitions need refinement and
+  portrait clothing is cosmetic. No runtime AI image generation.

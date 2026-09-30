@@ -1,3 +1,5 @@
+import { hash } from './core.js';
+import { setAppearancePart, appearanceOf } from './appearance.js';
 import {
   newCampaign,
   tickCampaign,
@@ -400,13 +402,38 @@ document.addEventListener('input', (e) => {
   if (e.target.id === 'hero-name') ui.creation.name = e.target.value;
   if (e.target.id === 'world-seed') ui.creation.seed = e.target.value;
 });
+window.addEventListener('portraits-ready', () => {
+  updateUI();
+  renderFeature();
+});
+window.addEventListener('portraits-error', () =>
+  toast('Portrait artwork could not load. Reload to try again.'),
+);
 document.addEventListener('change', (e) => {
+  if (e.target.dataset.appearancePart) {
+    const creation = e.target.dataset.appearanceMode === 'creation';
+    const person = creation
+      ? ui.creation
+      : state.party.find((p) => p.id === ui.person) || state.party[0];
+    if (creation && !person.appearance)
+      person.appearance = appearanceOf({
+        ...person,
+        id: `${hash(person.seed || 'The Long March')}-1`,
+      });
+    if (setAppearancePart(person, e.target.dataset.appearancePart, Number(e.target.value))) {
+      if (!creation) save(true);
+      renderFeature();
+      updateUI();
+    }
+    return;
+  }
   if (e.target.id === 'creation-culture') {
     ui.creation.culture = Number(e.target.value);
     renderFeature();
   }
   if (e.target.id === 'creation-sex') {
     ui.creation.sex = e.target.value;
+    ui.creation.appearance = undefined;
     renderFeature();
   }
 
@@ -637,6 +664,8 @@ document.addEventListener('click', (e) => {
         const c = ui.creation;
         state = newCampaign(c.seed || 'The Long March', c.name || 'Wanderer', c.choices[0]);
         applyBackground(state, c.choices, c.culture, c.sex);
+        if (c.appearance)
+          state.party.find((p) => p.id === state.heroId).appearance = appearanceOf(c);
         battle = null;
         tab = 'world';
         hasCampaign = true;

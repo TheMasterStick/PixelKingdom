@@ -76,3 +76,20 @@ Simulation modules run in both Node and the browser without DOM access. This per
 This is a playable first slice, not the finished sandbox. The campaign has a 20-person cap, six preset-named factions, generated settlement locations/names, and a 192×128-tile world. Battles feature seeded woodland, bushes, rocks, mud and gravel with obstacle routing and simple cover. Unit collision and immediate ranged damage remain simplified; large-army terrain performance has not yet been established. Faction resources and recruitment replenish through a basic daily model, with basic player trade and diplomacy now available. AI expansion, faction field armies, comprehensive barter, crafting, fief ownership, vassalage, sieges, marriage, aging, and succession are not implemented. Population/prosperity are descriptors, not a simulated growth model. Family and dynasty records currently reserve persistent relationships only.
 
 Keyboard/mouse desktop browsers are the primary input target. The layout adapts to smaller displays, but touch battlefield controls have not been validated.
+
+## Modular portrait test
+
+Open **Character → Appearance** to independently choose head, body, eyes, nose,
+mouth, hair, beard, outfit and skin. The same controls appear during character
+creation. Choices are stored on each person and survive save/load; existing saves
+receive deterministic initial combinations. Companions can also be edited.
+
+Portraits are composed locally using exact crops from the two original premade
+parts sheets in `public/assets/portraits/`. There are no AI calls or pre-rendered
+complete-character presets. A cached Canvas compositor removes the sheet backdrop,
+normalizes skin shades and layers the selected parts. Small and large portraits
+use the same composition throughout the campaign UI.
+
+This is an initial modular art test: feature transitions, matching all hair/head
+combinations, and skin shading need further art refinement. Outfits are cosmetic
+and do not follow equipped armor yet. Battlefield sprites remain unchanged.

@@ -178,3 +178,25 @@ test('supply work and prisoner ransom transfer resources without duplicate rewar
   assert.equal(s.prisoners.length, 1);
   assert.equal(ransomPrisoners(s, t), 0);
 });
+
+test('modular appearance choices persist, migrate old people, and leave unrelated features unchanged', async () => {
+  const { appearanceOf, setAppearancePart, APPEARANCE_OPTIONS } =
+    await import('../src/appearance.js');
+  const s = newCampaign('portrait-composition');
+  const p = s.party[0];
+  const before = { ...p.appearance };
+  assert(setAppearancePart(p, 'eyes', (before.eyes + 1) % 4));
+  for (const key of Object.keys(APPEARANCE_OPTIONS))
+    if (key !== 'eyes') assert.equal(p.appearance[key], before[key]);
+  const changed = { ...p.appearance };
+  assert.equal(setAppearancePart(p, 'hair', 99), false);
+  assert.deepEqual(p.appearance, changed);
+  assert.deepEqual(decodeSave(encodeSave(s)).party[0].appearance, changed);
+  const old = s.settlements[0].recruits[0];
+  delete old.appearance;
+  const expected = appearanceOf(old);
+  ensureFeatures(s);
+  assert.deepEqual(old.appearance, expected);
+  ensureFeatures(s);
+  assert.deepEqual(p.appearance, changed);
+});

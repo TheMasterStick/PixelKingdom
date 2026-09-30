@@ -1,3 +1,4 @@
+import { ensureAppearance } from './appearance.js';
 export const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 export const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 export function hash(str) {
@@ -132,7 +133,7 @@ export function createPerson(s, type = 'recruit', culture = 0) {
     n = 2;
   while (s.names[name]) name = `${base} ${n++}`;
   s.names[name] = true;
-  return {
+  return ensureAppearance({
     id,
     name,
     culture,
@@ -152,7 +153,7 @@ export function createPerson(s, type = 'recruit', culture = 0) {
     equipment: { weapon: 'Common steel', armor: 'Travel clothes' },
     family: { spouseId: null, parentIds: [], childIds: [] },
     history: [],
-  };
+  });
 }
 export function addXP(p, amount) {
   p.xp += amount;

@@ -1,3 +1,4 @@
+import { ensureAppearance } from './appearance.js';
 import { createPerson, hash, random, clamp, TYPES } from './core.js';
 
 export const ITEMS = {
@@ -271,6 +272,8 @@ export function applyBackground(s, choices, culture = 0, sex = 'male') {
   p.skills = totals.skills;
   p.talentPoints = totals.talentPoints;
   p.sex = sex;
+  delete p.appearance;
+  ensureAppearance(p);
   p.culture = culture;
   s.gold = totals.gold;
   s.food = totals.food;
@@ -297,6 +300,8 @@ export function ensureFeatures(s) {
     if (!f.leader) {
       f.leader = createPerson(s, 'companion', f.id % 3);
       f.leader.title = f.id % 2 ? 'Lady' : 'Lord';
+      f.leader.sex = f.id % 2 ? 'female' : 'male';
+      delete f.leader.appearance;
       f.leader.age = 34 + f.id * 3;
       f.leader.history = [{ day: 1, event: `Rules ${f.name} from its ancestral seat.` }];
     }
@@ -321,6 +326,21 @@ export function ensureFeatures(s) {
         ['Alda', 'Edric', 'Hilda', 'Torsten', 'Rowan', 'Iselle'][n % 6],
       role: t.kind === 'village' ? 'Village elder' : 'Settlement steward',
     };
+  }
+  for (const p of [
+    ...s.party,
+    ...(s.dead || []),
+    ...s.prisoners,
+    ...s.factions.map((f) => f.leader),
+    ...s.settlements.flatMap((t) => [...t.recruits, ...(t.companion ? [t.companion] : [])]),
+  ])
+    ensureAppearance(p);
+  for (const t of s.settlements) {
+    t.notable.id ??= `notable-${t.id}`;
+    t.notable.sex ??= ['Alda', 'Hilda', 'Iselle'].some((name) => t.notable.name.endsWith(name))
+      ? 'female'
+      : 'male';
+    ensureAppearance(t.notable);
   }
 }
 export function bestTalent(s, key) {

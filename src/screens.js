@@ -1,3 +1,4 @@
+import { APPEARANCE_OPTIONS, appearanceOf } from './appearance.js';
 import { TYPES, CULTURES, stats, hash } from './core.js';
 import {
   ITEMS,
@@ -21,12 +22,24 @@ const empty = (title, text) =>
 export function frame(title, kicker, body, footer = '', tabs = '', canClose = true) {
   return `<header class="window-header"><div><div class="eyebrow">${kicker}</div><h1>${title}</h1></div>${canClose ? btn('×', 'ui-close', '', 'class="window-close" aria-label="Close window"') : ''}</header>${tabs ? `<nav class="window-tabs">${tabs}</nav>` : ''}<div class="window-content">${body}</div><footer class="window-footer">${footer || '<span>THE LONG MARCH</span><span>Escape to return</span>'}</footer>`;
 }
+function appearanceControls(p, mode) {
+  const a = appearanceOf(p);
+  return `<div class="appearance-controls">${Object.entries(APPEARANCE_OPTIONS)
+    .map(
+      ([key, values]) =>
+        `<div><label for="appearance-${mode}-${key}">${key[0].toUpperCase() + key.slice(1)}</label><select id="appearance-${mode}-${key}" data-appearance-part="${key}" data-appearance-mode="${mode}">${values.map((label, i) => `<option value="${i}" ${a[key] === i ? 'selected' : ''}>${label}</option>`).join('')}</select></div>`,
+    )
+    .join(
+      '',
+    )}</div><p class="fine-print">Change each part independently. Portrait clothing is cosmetic; equipped items determine combat stats.</p>`;
+}
 export function creationScreen(c, hasSave) {
   const totals = creationTotals(c.choices),
     p = {
       id: `${hash(c.seed || 'The Long March')}-1`,
       name: c.name || 'Wanderer',
       sex: c.sex,
+      appearance: c.appearance,
       culture: c.culture,
       equipment: {
         armor: totals.items.includes('gambeson') ? 'Quilted gambeson' : 'Travel clothes',
@@ -42,7 +55,7 @@ export function creationScreen(c, hasSave) {
     )}${stat('Crowns', totals.gold)}${stat('Provisions', totals.food)}${stat('Talent points', totals.talentPoints)}</div></aside>`;
   let content =
     c.step === 0
-      ? `<div class="eyebrow">A NAME BEFORE A CROWN</div><h2>Who will you become?</h2><p class="muted">A life lived before the first march. Choose the experiences that shaped your character.</p><label for="hero-name">Your name</label><input id="hero-name" maxlength="40" value="${esc(c.name)}"><div class="two-col"><div><label for="creation-culture">Culture</label><select id="creation-culture">${CULTURES.map((v, i) => `<option value="${i}" ${c.culture === i ? 'selected' : ''}>${v.name}</option>`).join('')}</select></div><div><label for="creation-sex">Appearance</label><select id="creation-sex"><option value="male" ${c.sex === 'male' ? 'selected' : ''}>Man</option><option value="female" ${c.sex === 'female' ? 'selected' : ''}>Woman</option></select></div></div><label for="world-seed">World seed</label><input id="world-seed" maxlength="80" value="${esc(c.seed)}"><p class="fine-print">Culture changes your character’s visual identity. Your chosen history determines starting abilities.</p>`
+      ? `<div class="eyebrow">A NAME BEFORE A CROWN</div><h2>Who will you become?</h2><p class="muted">A life lived before the first march. Choose the experiences that shaped your character.</p><label for="hero-name">Your name</label><input id="hero-name" maxlength="40" value="${esc(c.name)}"><div class="two-col"><div><label for="creation-culture">Culture</label><select id="creation-culture">${CULTURES.map((v, i) => `<option value="${i}" ${c.culture === i ? 'selected' : ''}>${v.name}</option>`).join('')}</select></div><div><label for="creation-sex">Appearance</label><select id="creation-sex"><option value="male" ${c.sex === 'male' ? 'selected' : ''}>Man</option><option value="female" ${c.sex === 'female' ? 'selected' : ''}>Woman</option></select></div></div><label for="world-seed">World seed</label><input id="world-seed" maxlength="80" value="${esc(c.seed)}"><h3>Character appearance</h3>${appearanceControls(p, 'creation')}<p class="fine-print">Your chosen history determines starting abilities.</p>`
       : c.step === 5
         ? `<div class="eyebrow">THE STORY SO FAR</div><h2>${esc(c.name || 'Wanderer')}</h2><p class="muted">${CULTURES[c.culture].name} · A free adventurer</p>${BACKGROUNDS.map(
             (s, i) => {
@@ -99,7 +112,7 @@ export function characterScreen(s, u) {
       ),
     )
     .join('');
-  const tabs = ['equipment', 'talents', 'biography']
+  const tabs = ['equipment', 'talents', 'biography', 'appearance']
     .map((x) =>
       btn(
         x[0].toUpperCase() + x.slice(1),
@@ -110,7 +123,9 @@ export function characterScreen(s, u) {
     )
     .join('');
   let detail = '';
-  if (u.personTab === 'talents')
+  if (u.personTab === 'appearance')
+    detail = `<div class="section-heading"><div class="eyebrow">MODULAR PORTRAIT TEST</div><h2>A face for your story</h2><p class="muted">These portraits combine the premade parts in your browser. Choose each feature for ${esc(p.name)}; your choices are saved with this character.</p></div>${appearanceControls(p, 'person')}`;
+  else if (u.personTab === 'talents')
     detail = `<div class="talent-toolbar"><strong>${p.skillPoints} skill points · ${p.talentPoints} talent points</strong><span>Hover or read each card for its effect.</span></div><div class="skill-bars">${Object.entries(
       p.skills,
     )
@@ -186,7 +201,7 @@ export function settlementScreen(s, t, u, recruitMarkup) {
   const side = `<aside class="settlement-nav">${herald(f)}<small>${esc(f.name)}</small>${nav.map(([id, name, ico]) => btn(`${icon(ico)}${name}`, 'ui-settlement-tab', id, `class="${section === id ? 'active' : ''}"`)).join('')}<div class="nav-spacer"></div>${btn('Leave settlement →', 'leave', '', 'class="leave-button"')}</aside>`;
   let body = '';
   if (section === 'overview')
-    body = `<div class="settlement-illustration">${settlementArt(t, f)}<div class="scene-title"><div class="eyebrow">${esc(f.name)} · ${t.kind.toUpperCase()}</div><h2>${esc(t.name)}</h2><p>${t.kind === 'village' ? 'Smoke rises from the hearths. The fields sustain a kingdom.' : t.kind === 'castle' ? 'Stone walls guard the old road. Banners turn in the wind.' : 'Trade, ambition and a thousand small lives behind the walls.'}</p></div></div><div class="ledger-stats">${stat('Population', t.population.toLocaleString())}${stat('Prosperity', t.prosperity + ' / 100')}${stat('Provisions', t.stock)}${stat('Recruits', t.recruits.length)}</div><div class="settlement-overview"><section><div class="eyebrow">WITHIN THESE WALLS</div><h3>${t.kind === 'village' ? 'A place to begin' : 'Crossroads of the Borderlands'}</h3><p class="muted">${esc(t.name)} is held by ${esc(f.leader.title + ' ' + f.leader.name)} of ${esc(f.name)}. Local workshops produce ${ITEMS[t.production].name.toLowerCase()}. There are ${t.recruits.length} regular soldiers available for recruitment.</p><div class="card-actions">${btn('Visit the market', 'ui-settlement-tab', 'market')}${btn('Find work', 'ui-settlement-tab', 'quests')}</div></section><section class="notable-card">${portrait({ id: t.id, name: t.notable.name, culture: t.faction % 3 })}<div><small>${esc(t.notable.role)}</small><h3>${esc(t.notable.name)}</h3><p>“There is always work for a willing company.”</p>${btn('Speak about work', 'ui-settlement-tab', 'quests')}</div></section></div>`;
+    body = `<div class="settlement-illustration">${settlementArt(t, f)}<div class="scene-title"><div class="eyebrow">${esc(f.name)} · ${t.kind.toUpperCase()}</div><h2>${esc(t.name)}</h2><p>${t.kind === 'village' ? 'Smoke rises from the hearths. The fields sustain a kingdom.' : t.kind === 'castle' ? 'Stone walls guard the old road. Banners turn in the wind.' : 'Trade, ambition and a thousand small lives behind the walls.'}</p></div></div><div class="ledger-stats">${stat('Population', t.population.toLocaleString())}${stat('Prosperity', t.prosperity + ' / 100')}${stat('Provisions', t.stock)}${stat('Recruits', t.recruits.length)}</div><div class="settlement-overview"><section><div class="eyebrow">WITHIN THESE WALLS</div><h3>${t.kind === 'village' ? 'A place to begin' : 'Crossroads of the Borderlands'}</h3><p class="muted">${esc(t.name)} is held by ${esc(f.leader.title + ' ' + f.leader.name)} of ${esc(f.name)}. Local workshops produce ${ITEMS[t.production].name.toLowerCase()}. There are ${t.recruits.length} regular soldiers available for recruitment.</p><div class="card-actions">${btn('Visit the market', 'ui-settlement-tab', 'market')}${btn('Find work', 'ui-settlement-tab', 'quests')}</div></section><section class="notable-card">${portrait(t.notable)}<div><small>${esc(t.notable.role)}</small><h3>${esc(t.notable.name)}</h3><p>“There is always work for a willing company.”</p>${btn('Speak about work', 'ui-settlement-tab', 'quests')}</div></section></div>`;
   if (section === 'recruit')
     body = `<div class="section-heading"><div class="eyebrow">THE MUSTER GROUND</div><h2>New hands for your banner</h2><p class="muted">Recruit by troop type. Meet the individuals in your company afterward.</p></div><div class="recruit-layout"><section>${recruitMarkup}</section><section><h3>Your company <small>${s.party.length} / 20</small></h3>${troopGroups(
       s,

@@ -1,3 +1,5 @@
+import { composePortrait } from './portrait-render.js';
+import { appearanceOf } from './appearance.js';
 import { hash, random } from './core.js';
 export const esc = (s) =>
   String(s ?? '').replace(
@@ -33,6 +35,9 @@ export function icon(type, cls = 'item-icon') {
   return svg(paths[type] || paths.shield, '0 0 32 32', cls);
 }
 export function portrait(p, full = false) {
+  const url = composePortrait(p);
+  if (url)
+    return `<svg class="${full ? 'figure-art' : 'portrait-art'} composed-portrait" viewBox="${full ? '0 0 512 640' : '120 0 272 330'}" role="img" aria-label="${esc('Portrait of ' + (p.name || 'your character'))}" data-appearance="${esc(JSON.stringify(appearanceOf(p)))}" xmlns="http://www.w3.org/2000/svg"><image href="${url}" width="512" height="640"/></svg>`;
   const n = hash(p.id || p.name || 'hero'),
     hair = ['#684531', '#372d29', '#b58d51', '#bdb4a0'][n % 4],
     skin = ['#d8ae82', '#bd8b64', '#dfbd97'][n % 3],
