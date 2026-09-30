@@ -33,7 +33,7 @@ Scale work should continue across milestones rather than wait until the last ste
 
 ## Interface reference direction — 30 September 2026
 
-Reviewed the ten additional Bannerlord screenshots supplied after the wooded-battlefield pass. They guide information hierarchy and interaction patterns, adapted to PixelKingdom's human medieval pixel presentation. These are future feature targets, not a claim that the pictured systems are implemented.
+Reviewed the ten additional Bannerlord screenshots supplied after the wooded-battlefield pass. They guide information hierarchy and interaction patterns, adapted to PixelKingdom's human medieval pixel presentation. These references informed the Chapter II implementation. See PROGRESS.md for the exact implemented subset and remaining simulation work.
 
 | Reference screen | Direction for PixelKingdom |
 |---|---|

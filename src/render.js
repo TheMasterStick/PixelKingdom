@@ -155,19 +155,39 @@ export class Renderer {
       if (p.x < -80 || p.x > w + 80 || p.y < -40 || p.y > h + 40) continue;
       const color = s.factions[t.faction].color,
         selected = s.selectedSettlement === t.id;
-      g.fillStyle = '#20352a';
-      g.strokeStyle = color;
-      g.lineWidth = 2;
-      g.beginPath();
-      g.arc(p.x, p.y, t.kind === 'village' ? 5 : 8, 0, Math.PI * 2);
-      g.fill();
-      g.stroke();
-      if (t.kind !== 'village') {
-        g.fillStyle = color;
-        g.fillRect(p.x - 3, p.y - 4, 6, 7);
-        g.fillRect(p.x - 4, p.y - 6, 2, 3);
-        g.fillRect(p.x + 2, p.y - 6, 2, 3);
+      // Small pixel settlements distinguish rural holdings from fortified seats.
+      g.fillStyle = '#1d3027';
+      g.fillRect(p.x - 14, p.y + 7, 28, 4);
+      if (t.kind === 'village') {
+        for (const [dx, dy] of [
+          [-10, 0],
+          [2, -4],
+        ]) {
+          g.fillStyle = '#d1b889';
+          g.fillRect(p.x + dx, p.y + dy, 10, 9);
+          g.fillStyle = '#8b6047';
+          g.beginPath();
+          g.moveTo(p.x + dx - 2, p.y + dy);
+          g.lineTo(p.x + dx + 5, p.y + dy - 7);
+          g.lineTo(p.x + dx + 12, p.y + dy);
+          g.fill();
+          g.fillStyle = '#514332';
+          g.fillRect(p.x + dx + 4, p.y + dy + 4, 3, 5);
+        }
+      } else {
+        g.fillStyle = '#a5a78d';
+        g.fillRect(p.x - 12, p.y - 3, 24, 13);
+        g.fillRect(p.x - 14, p.y - 10, 7, 20);
+        g.fillRect(p.x + 7, p.y - 10, 7, 20);
+        g.fillStyle = '#d0c5a1';
+        for (let k = -14; k <= 12; k += 5) g.fillRect(p.x + k, p.y - 12, 3, 5);
+        g.fillStyle = '#434b3b';
+        g.fillRect(p.x - 3, p.y + 2, 6, 8);
       }
+      g.fillStyle = '#d7bf85';
+      g.fillRect(p.x + 13, p.y - 20, 2, 20);
+      g.fillStyle = color;
+      g.fillRect(p.x + 15, p.y - 20, 10, 6);
       if (selected) {
         g.strokeStyle = '#ffe3a1';
         g.lineWidth = 1;
@@ -333,12 +353,25 @@ export class Renderer {
           : u.formation === 'archers'
             ? '#bbd2aa'
             : '#89bdd0';
-      g.strokeStyle = u.side ? '#683f32' : '#2b4d4d';
-      g.lineWidth = 1.5;
-      g.beginPath();
-      g.arc(u.x, u.y, u.hero ? 6 : 4, 0, Math.PI * 2);
-      g.fill();
-      g.stroke();
+      // Pixel silhouettes remain batched Canvas primitives, with team-coloured coats.
+      const coat = g.fillStyle;
+      g.fillStyle = '#23382bc0';
+      g.fillRect(u.x - 5, u.y + 4, 11, 3);
+      g.fillStyle = coat;
+      g.fillRect(u.x - 3, u.y - 2, 7, 7);
+      g.fillStyle = '#dbc49e';
+      g.fillRect(u.x - 2, u.y - 6, 5, 4);
+      g.fillStyle = u.type === 'veteran' ? '#c7c8b3' : '#655b41';
+      g.fillRect(u.x - 2, u.y - 7, 5, 2);
+      g.fillStyle = '#35362b';
+      g.fillRect(u.x - 3, u.y + 5, 3, 3);
+      g.fillRect(u.x + 2, u.y + 5, 3, 3);
+      g.fillStyle = u.hero ? '#e7c176' : '#b4bea5';
+      g.fillRect(u.x + 5, u.y - 5, 1, 10);
+      if (u.formation !== 'archers') {
+        g.fillStyle = coat;
+        g.fillRect(u.x - 6, u.y, 3, 5);
+      }
       if (u.hero) {
         g.strokeStyle = '#fce6aa';
         g.beginPath();

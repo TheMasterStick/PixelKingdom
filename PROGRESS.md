@@ -39,3 +39,21 @@ Next priorities: richer formation control and battle camera; deeper backgrounds/
 - Removed the workaround that stopped telemetry while a select held focus. Existing simulation timing, keyboard shortcuts and save format are unchanged.
 - Validation: 16 simulation tests, production build and 8 real-browser DOM regressions pass. Browser checks cover unchanged refreshes, a press spanning refreshes, counter/style/disabled updates, select focus/selection, roster identity, changed action identity, typed inputs and scroll retention.
 - Recorded all ten additional questionnaire, encyclopedia, barter, equipment, town, village, troop, talent and diplomacy references in docs/DESIGN.md as future design direction.
+
+
+## 2026-09-30 — Chapter II: life, settlements and diplomacy
+
+Implemented from the full twenty-reference set:
+- Brass/oak window frames, persistent navigation, original pixel portraits, heraldry and item icons; illustrated town, castle and village views with different scenery. Windows retain their header/footer while long content and inventories scroll.
+- Six-step creation: identity, four background questions and review. Choices apply the displayed skills, crowns, provisions, starting equipment and talent point, with a persistent biography.
+- Settlement sections for overview, quantity recruitment, market, tavern/common hall, local work, economy, captives and ruling house. Recruitment stays anonymous until the company roster; companions are individual hires.
+- Two-sided market with categories, staged purchases/sales, Shift-click quantities, cancel/reset and confirmation. Real inventory, merchant funds, local production discounts, daily stocks and trade-agreement prices.
+- Hero/companion equipment sheet with character selector, two implemented equipment slots, shared owned inventory, equip/unequip, live stats and formation command. Six talents across three branches affect health, armor, command strength, XP, travel and recovery.
+- Grouped troop roster with named member details, service records and promotions; pixel soldier silhouettes and settlement markers; battle results broken down by troop type.
+- Searchable, linked encyclopedia for settlements, kingdoms and named known people, plus map location actions.
+- Diplomacy with rulers, comparisons and explicit proposal review: gifts, market agreements, 30-day non-aggression pacts, treasury-funded mercenary wages, hostility and paid peace. Treaties and resources persist. Hostile settlements deny entry and recruitment/trade.
+- Provision-delivery commissions, victory prisoner capture, and treasury-limited ransoms.
+
+Validation: all 24 simulation/feature tests pass, including transaction conservation/atomicity, exact character-creation effects, equipment stats, treaty requirements, daily wages, talent effects, migration, commissions and ransom. Production build passes. Browser walkthrough covered creation/review, town navigation, purchase and recruitment, companion hire, quest acceptance, equip, talent allocation, gift/trade agreement, save restoration, encyclopedia search and village entries, and formation assignment.
+
+Scope: this is a working interface and feature expansion, not complete kingdom simulation. The twenty references are addressed through the applicable screen families; free-form noble/vassal barter, fief transfers, marriage, alliances, protectorates, sieges, detailed crafting/economy and player realm ownership still require future underlying systems. No decorative button claims to perform these actions. Company limit remains 20; thousand-unit terrain battles remain unverified.

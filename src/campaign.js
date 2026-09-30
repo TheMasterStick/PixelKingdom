@@ -1,3 +1,4 @@
+import { ensureFeatures, bestTalent, featureDay, capturePrisoners, canVisit } from './features.js';
 import { random, hash, pick, clamp, distance, createPerson, addXP, TYPES } from './core.js';
 export const WORLD_W = 192,
   WORLD_H = 128;
@@ -185,6 +186,7 @@ export function newCampaign(seedText = 'The Long March', name = 'Nicholas', hist
       alive: true,
     });
   }
+  ensureFeatures(s);
   log(s, 'A new house begins. Visit ' + home.name + ' to gather your first followers.');
   return s;
 }
@@ -267,13 +269,14 @@ export function travel(s, target) {
   return true;
 }
 function daily(s) {
+  featureDay(s);
   const upkeep = s.party
     .filter((p) => p.type !== 'hero')
     .reduce((n, p) => n + (p.type === 'companion' ? 3 : Math.ceil(p.level / 2)), 0);
   s.gold = Math.max(0, s.gold - upkeep);
   s.food = Math.max(0, s.food - Math.max(1, Math.ceil(s.party.length / 4)));
   for (const p of s.party) {
-    p.health = Math.min(100, p.health + (s.food > 0 ? 18 : 4));
+    p.health = Math.min(100, p.health + (s.food > 0 ? 18 : 4) + bestTalent(s, 'medicine') * 4);
     p.wounded = p.health < 35;
   }
   for (const t of s.settlements) {
@@ -314,7 +317,8 @@ export function tickCampaign(s, dt) {
     const target = s.path[0],
       d = distance(s, target),
       speed =
-        (1.5 * (1 + (s.party[0].skills.scouting || 0) * 0.08)) /
+        (1.5 *
+          (1 + (s.party[0].skills.scouting || 0) * 0.08 + bestTalent(s, 'pathfinder') * 0.05)) /
         (tile(s, s.x, s.y) === 2 ? 1.3 : 1),
       step = speed * activeDt;
     if (d <= step) {
@@ -390,6 +394,7 @@ export function recruitmentQuote(s, t, quantities) {
       count > 0 &&
       s.mode === 'settlement' &&
       s.visiting === t.id &&
+      canVisit(s, t) &&
       s.party.length + count <= 20 &&
       s.gold >= cost,
   };
@@ -415,7 +420,7 @@ export function recruitTroops(s, t, quantities) {
   return true;
 }
 export function recruit(s, t, id) {
-  if (s.mode !== 'settlement' || s.visiting !== t.id) return false;
+  if (s.mode !== 'settlement' || s.visiting !== t.id || !canVisit(s, t)) return false;
   const p = t.recruits.find((p) => p.id === id) || t.companion;
   if (!p || p.id !== id) return false;
   const price = TYPES[p.type].cost;
@@ -506,10 +511,12 @@ export function decodeSave(raw) {
   s.waiting = false;
   s.paused = false;
   s.visiting = null;
+  ensureFeatures(s);
   return s;
 }
 export function rewardBattle(s, b) {
   const victory = b.result === 'victory';
+  const xpBonus = 1 + bestTalent(s, 'drill') * 0.1;
   const fallen = [];
   for (const u of b.units.filter((u) => u.side === 0)) {
     const p = s.party.find((p) => p.id === u.personId);
@@ -529,7 +536,7 @@ export function rewardBattle(s, b) {
       p.wounded = p.health < 35;
     }
     p.kills += u.kills;
-    addXP(p, (victory ? 25 : 10) + u.kills * 10);
+    addXP(p, Math.round(((victory ? 25 : 10) + u.kills * 10) * xpBonus));
   }
   s.dead.push(...fallen.map((p) => ({ ...p, died: s.day })));
   s.party = s.party.filter((p) => !fallen.some((f) => f.id === p.id));
@@ -562,6 +569,7 @@ export function rewardBattle(s, b) {
       `Captured and released after ransom. ${fallen.length} soldiers lost; your survivors return to ${home.name}.`,
     );
   }
+  capturePrisoners(s, b);
   s.mode = 'campaign';
   s.path = [];
   s.waiting = false;

@@ -25,6 +25,31 @@ import {
 } from './battle.js';
 import { Renderer } from './render.js';
 import { updateHTML } from './ui-dom.js';
+import {
+  ensureFeatures,
+  applyBackground,
+  ITEMS,
+  amount,
+  marketAmount,
+  trade,
+  tradeQuote,
+  equipItem,
+  unequipItem,
+  learnTalent,
+  diplomaticAction,
+  ransomPrisoners,
+  supplyAction,
+  canVisit,
+} from './features.js';
+import {
+  creationScreen,
+  companyScreen,
+  characterScreen,
+  settlementScreen,
+  encyclopediaScreen,
+  diplomacyScreen,
+} from './screens.js';
+import { portrait, icon } from './art.js';
 const $ = (s) => document.querySelector(s),
   esc = (s) =>
     String(s ?? '').replace(
@@ -45,6 +70,64 @@ let state = newCampaign(),
   toastTimer,
   modalKind = '';
 let recruitmentCart = {};
+const ui = {
+  page: '',
+  settlement: 'overview',
+  person: null,
+  group: 'recruit',
+  personTab: 'equipment',
+  encyclopedia: 'settlements',
+  search: '',
+  entity: '',
+  faction: 0,
+  proposal: null,
+  tradeCart: {},
+  category: 'All',
+  creation: {
+    step: 0,
+    name: 'Nicholas',
+    seed: 'The Long March',
+    culture: 0,
+    sex: 'male',
+    choices: ['retainer', 'bold', 'watch', 'stand'],
+  },
+};
+let lastFeatureRoute = '';
+function renderFeature() {
+  if (!ui.page) return;
+  ensureFeatures(state);
+  let html;
+  if (ui.page === 'creation') html = creationScreen(ui.creation, hasCampaign);
+  if (ui.page === 'company') html = companyScreen(state, ui);
+  if (ui.page === 'character') html = characterScreen(state, ui);
+  if (ui.page === 'encyclopedia') html = encyclopediaScreen(state, ui);
+  if (ui.page === 'diplomacy') html = diplomacyScreen(state, ui);
+  if (ui.page === 'settlement') {
+    const town = state.settlements.find((t) => t.id === state.visiting);
+    if (town) html = settlementScreen(state, town, ui, recruitmentPanel(town));
+  }
+  if (html) {
+    const route = [
+      ui.page,
+      ui.page === 'creation' ? ui.creation.step : '',
+      ui.page === 'character' ? ui.personTab : '',
+      ui.page === 'settlement' ? ui.settlement : '',
+      ui.page === 'encyclopedia' ? ui.encyclopedia : '',
+    ].join(':');
+    showModal(html, ui.page);
+    if (route !== lastFeatureRoute) modal.querySelector('.window-content')?.scrollTo(0, 0);
+    lastFeatureRoute = route;
+  }
+}
+function openFeature(page) {
+  if (battle) {
+    toast('Finish the battle to open the campaign.');
+    return;
+  }
+  ui.page = page;
+  renderFeature();
+}
+
 renderer.center(state);
 function toast(text) {
   $('#toast').textContent = text;
@@ -54,12 +137,17 @@ function toast(text) {
 }
 function showModal(html, kind = 'info') {
   modalKind = kind;
+  modal.classList.toggle(
+    'game-window',
+    ['creation', 'company', 'character', 'settlement', 'encyclopedia', 'diplomacy'].includes(kind),
+  );
   updateHTML(modal, html);
   if (!modal.open) modal.showModal();
 }
 function closeModal() {
   modal.close();
   modalKind = '';
+  ui.page = '';
 }
 function save(silent = false) {
   try {
@@ -88,14 +176,12 @@ function load() {
   }
 }
 function creation() {
-  showModal(
-    `<div class="eyebrow">A NEW CHRONICLE</div><h1>Every kingdom begins<br>with one name.</h1><p class="muted">A living medieval world. A company of individuals.<br>Your first chapter begins on the roads of Northmarch.</p><form id="creation-form"><div class="two-col"><div><label for="hero-name">Your name</label><input id="hero-name" name="name" value="Nicholas" maxlength="40" required></div><div><label for="world-seed">World seed</label><input id="world-seed" name="seed" value="The Long March" maxlength="80" required></div></div><label>Your family’s livelihood</label><label class="choice"><input type="radio" name="history" value="retainer" checked> A retainer’s household<small>You grew up around soldiers. +2 Martial skill.</small></label><label class="choice"><input type="radio" name="history" value="merchant"> A merchant’s household<small>You learned the value of a promise. +100 crowns, +1 Leadership.</small></label><label class="choice"><input type="radio" name="history" value="hunter"> A hunter’s household<small>You learned to read the wild. +2 Scouting, +12 provisions.</small></label><div class="dialog-actions">${hasCampaign ? '<button type="button" data-action="close">Back</button>' : '<button type="button" data-action="load">Continue saved campaign</button>'}<button class="primary" type="submit">Begin your journey</button></div></form>`,
-    'creation',
-  );
+  ui.creation.step = 0;
+  openFeature('creation');
 }
 function menu() {
   showModal(
-    `<div class="eyebrow">PIXELKINGDOM</div><h2>Your campaign</h2><p class="muted">Saves belong to this browser. Export a copy to carry your campaign to another computer.</p><div class="stack"><button data-action="save" ${battle ? 'disabled' : ''}>Save campaign</button><button data-action="load">Load last save</button><button data-action="export" ${battle ? 'disabled' : ''}>Export save file</button><button data-action="import">Import save file</button><button data-action="new">New campaign…</button></div><div class="notice">First chapter: adventuring, recruitment, equipment, progression, and formation battles. Fiefs, diplomacy, marriage, and succession are planned for later chapters.</div><div class="dialog-actions"><button data-action="close">Return to game</button></div>`,
+    `<div class="eyebrow">PIXELKINGDOM</div><h2>Your campaign</h2><p class="muted">Saves belong to this browser. Export a copy to carry your campaign to another computer.</p><div class="stack"><button data-action="save" ${battle ? 'disabled' : ''}>Save campaign</button><button data-action="load">Load last save</button><button data-action="export" ${battle ? 'disabled' : ''}>Export save file</button><button data-action="import">Import save file</button><button data-action="new">New campaign…</button></div><div class="notice">Chapter two: settlements, trade, character histories, equipment, talents and diplomatic proposals. Fiefs, vassalage, marriage and succession remain ahead.</div><div class="dialog-actions"><button data-action="close">Return to game</button></div>`,
     'menu',
   );
 }
@@ -113,7 +199,7 @@ function stageName() {
 }
 function leftPanel() {
   const hero = state.party.find((p) => p.id === state.heroId);
-  return `<div class="eyebrow">${esc(state.dynasty.name)}</div><div class="identity"><div class="portrait">${esc(hero.name.charAt(0))}</div><div><h3>${esc(hero.name)}</h3><small>${stageName()} · Level ${hero.level}</small></div></div><div class="stats"><div class="stat"><span>TREASURY</span><strong class="gold">${state.gold} <small>♙</small></strong></div><div class="stat"><span>PROVISIONS</span><strong>${state.food} <small>rations</small></strong></div><div class="stat"><span>COMPANY</span><strong>${state.party.length}<small> / 20</small></strong></div><div class="stat"><span>RENOWN</span><strong>${state.renown}</strong></div></div><div class="divider"></div><div class="row"><strong>Clan tier ${state.clanLevel}</strong><small>${state.renown % 50} / 50</small></div><div class="bar"><i style="width:${(state.renown % 50) * 2}%"></i></div><p class="muted" style="font-size:12px">A name carried by ${state.party.length} ${state.party.length === 1 ? 'traveller' : 'travellers'}.</p><div class="divider"></div><div class="eyebrow">YOUR NEXT STEP</div><h3>${state.party.length === 1 ? 'Gather a company' : state.quest?.done ? 'Collect your reward' : state.quest ? 'Hunt the brigands' : 'Make your name'}</h3><p class="muted" style="font-size:13px">${state.party.length === 1 ? 'Enter a nearby settlement. Recruit levies, hire a companion, and purchase provisions.' : state.quest?.done ? 'Return to the settlement that offered your contract.' : state.quest ? 'Find the marked brigand party. Deploy your company and bring the roads back under control.' : 'Ask a settlement for a contract, or track down a brigand party on the map.'}</p><button class="full" data-action="nearby">Nearest settlement</button><button class="full quiet" data-action="party">Inspect company</button><div class="divider"></div><small style="font-size:11px;line-height:1.6;display:block">* ${state.food} food rations · ${Math.max(1, Math.ceil(state.party.length / 4))} consumed per day.<br>Troops draw daily wages. Wounds heal with time and provisions.</small>`;
+  return `<div class="eyebrow">${esc(state.dynasty.name)}</div><div class="identity">${portrait(hero)}<div><h3>${esc(hero.name)}</h3><small>${stageName()} · Level ${hero.level}</small></div></div><div class="stats"><div class="stat"><span>TREASURY</span><strong class="gold">${state.gold} <small>♙</small></strong></div><div class="stat"><span>PROVISIONS</span><strong>${state.food} <small>rations</small></strong></div><div class="stat"><span>COMPANY</span><strong>${state.party.length}<small> / 20</small></strong></div><div class="stat"><span>RENOWN</span><strong>${state.renown}</strong></div></div><div class="divider"></div><div class="row"><strong>Clan tier ${state.clanLevel}</strong><small>${state.renown % 50} / 50</small></div><div class="bar"><i style="width:${(state.renown % 50) * 2}%"></i></div><p class="muted" style="font-size:12px">A name carried by ${state.party.length} ${state.party.length === 1 ? 'traveller' : 'travellers'}.</p><div class="divider"></div><div class="eyebrow">YOUR NEXT STEP</div><h3>${state.party.length === 1 ? 'Gather a company' : state.quest?.done ? 'Collect your reward' : state.quest ? 'Hunt the brigands' : 'Make your name'}</h3><p class="muted" style="font-size:13px">${state.party.length === 1 ? 'Enter a nearby settlement. Recruit levies, hire a companion, and purchase provisions.' : state.quest?.done ? 'Return to the settlement that offered your contract.' : state.quest ? 'Find the marked brigand party. Deploy your company and bring the roads back under control.' : 'Ask a settlement for a contract, or track down a brigand party on the map.'}</p><button class="full" data-action="nearby">Nearest settlement</button><button class="full quiet" data-action="party">Inspect company</button><div class="divider"></div><small style="font-size:11px;line-height:1.6;display:block">* ${state.food} food rations · ${Math.max(1, Math.ceil(state.party.length / 4))} consumed per day.<br>Troops draw daily wages. Wounds heal with time and provisions.</small>`;
 }
 function rightPanel() {
   const t = state.settlements.find((t) => t.id === state.selectedSettlement),
@@ -167,6 +253,7 @@ function updateUI() {
     .querySelectorAll('[data-tab]')
     .forEach((el) => el.classList.toggle('active', el.dataset.tab === tab));
   $('#save-btn').disabled = false;
+  if (modal.open && ui.page) renderFeature();
 }
 function recruitmentPanel(t) {
   const offers = troopOffers(t),
@@ -186,51 +273,26 @@ function recruitmentPanel(t) {
   }<div class="recruit-summary"><div class="row"><span>Company</span><strong>${state.party.length} → ${state.party.length + quote.count} / 20</strong></div><div class="row"><span>Recruitment cost</span><strong>${quote.cost} crowns</strong></div><button class="full primary" data-action="recruit-confirm" ${!quote.valid ? 'disabled' : ''}>Recruit ${quote.count} ${quote.count === 1 ? 'soldier' : 'soldiers'}</button>${quote.count ? '<button class="full quiet" data-action="recruit-reset">Reset selection</button>' : ''}</div>`;
 }
 function settlement(t) {
-  if (state.visiting !== t.id) recruitmentCart = {};
+  if (!canVisit(state, t)) {
+    toast('This kingdom is hostile. Negotiate peace before entering.');
+    return;
+  }
+  if (state.visiting !== t.id) {
+    recruitmentCart = {};
+    ui.settlement = 'overview';
+    ui.tradeCart = {};
+  }
   state.mode = 'settlement';
   state.visiting = t.id;
   state.path = [];
   state.waiting = false;
-  const q = state.quest;
-  showModal(
-    `<div class="eyebrow">${esc(state.factions[t.faction].name)} · ${t.kind}</div><h1>${esc(t.name)}</h1><p class="muted">The campaign waits while you are here.</p><div class="two-col"><div><h3>The muster ground</h3>${recruitmentPanel(
-      t,
-    )}</div><div><h3>The market</h3><p class="muted">${state.gold} crowns · ${state.food} provisions</p><button class="full" data-action="food" ${state.gold < 10 || t.stock < 10 ? 'disabled' : ''}>Buy 10 provisions · 10 ♙</button><small>${t.stock} provisions in stock</small><div class="divider"></div><h3>The tavern</h3>${t.companion ? `<p>${esc(t.companion.name)}<br><small>${esc(t.companion.traits[0])} · Companion</small></p><button class="full" data-action="recruit" data-id="${t.companion.id}" ${state.gold < 100 || state.party.length >= 20 ? 'disabled' : ''}>Hire companion · 100 ♙</button>` : '<p class="muted">No companions seeking work.</p>'}</div></div><div class="divider"></div><h3>Work on the roads</h3>${!q ? '<p class="muted">A brigand party is troubling the countryside. The steward offers 100 crowns for their defeat.</p><button data-action="contract">Accept contract</button>' : q.townId === t.id && q.done ? '<button class="primary" data-action="claim">Collect 100 crowns</button>' : '<p class="muted">You already have a contract. Check your campaign panel for details.</p>'}<div class="dialog-actions"><button class="primary" data-action="leave">Leave settlement</button></div>`,
-    'settlement',
-  );
+  openFeature('settlement');
   updateUI();
 }
 function character(id) {
-  const p = state.party.find((p) => p.id === id);
-  if (!p) return;
-  showModal(
-    `<div class="eyebrow">${TYPES[p.type].label} · LEVEL ${p.level}</div><h2>${esc(p.name)}</h2><p class="muted">${esc(p.traits.join(' · '))} · ${p.kills} recorded kills</p><h3>Skills <small>(${p.skillPoints} points)</small></h3>${Object.entries(
-      p.skills,
-    )
-      .map(
-        ([key, val]) =>
-          `<div class="row"><span>${key[0].toUpperCase() + key.slice(1)} · ${val}</span><button data-action="skill" data-id="${p.id}" data-key="${key}" ${!p.skillPoints ? 'disabled' : ''}>+1</button></div>`,
-      )
-      .join(
-        '',
-      )}<small>Martial adds damage. Leadership strengthens a commanded formation. The hero’s Scouting increases campaign travel speed.</small><div class="divider"></div><h3>Talents <small>(${p.talentPoints} points)</small></h3>${[
-      ['vigor', 'Vigor', '+18 maximum health'],
-      ['inspiration', 'Inspiration', 'Stronger formation leadership'],
-    ]
-      .map(
-        ([key, label, help]) =>
-          `<div class="row"><span>${label} · ${p.talents[key]}<small style="display:block">${help}</small></span><button data-action="talent" data-id="${p.id}" data-key="${key}" ${!p.talentPoints ? 'disabled' : ''}>+1</button></div>`,
-      )
-      .join(
-        '',
-      )}<div class="divider"></div><h3>Equipment</h3><p class="muted">${esc(p.equipment.weapon)} · ${esc(p.equipment.armor)}</p><div class="card-actions"><button data-action="equip" data-id="${p.id}" data-slot="weapon" ${state.gold < 60 || p.equipment.weapon === 'Tempered sword' ? 'disabled' : ''}>Tempered sword · 60 ♙</button><button data-action="equip" data-id="${p.id}" data-slot="armor" ${state.gold < 80 || p.equipment.armor === 'Mail hauberk' ? 'disabled' : ''}>Mail hauberk · 80 ♙</button></div>${p.type === 'companion' ? `<div class="divider"></div><label for="leader-formation">Command assignment</label><select id="leader-formation" data-person="${p.id}"><option value="">Unassigned</option>${['infantry', 'archers'].map((f) => `<option value="${f}" ${state.formationLeaders[f] === p.id ? 'selected' : ''}>${FORMATION_NAMES[f]}</option>`).join('')}</select><small>A commander must be present and fighting to strengthen their formation.</small>` : ''}<div class="divider"></div>${p.history
-      .slice(-3)
-      .map((e) => `<p class="muted" style="font-size:12px">Day ${e.day} · ${esc(e.event)}</p>`)
-      .join(
-        '',
-      )}<div class="dialog-actions"><button data-action="close">Back to company</button></div>`,
-    'character',
-  );
+  if (ui.page !== 'character') ui.personTab = 'equipment';
+  ui.person = id;
+  openFeature('character');
 }
 function encounter(enemy) {
   if (modal.open || battle) return;
@@ -294,9 +356,18 @@ function battleUI() {
 }
 function battleResult() {
   const won = battle.result === 'victory',
-    lost = battle.units.filter((u) => u.side === 0 && u.hp <= 0).length;
+    our = battle.units.filter((u) => u.side === 0),
+    lost = our.filter((u) => u.hp <= 0).length;
+  const groups = [...new Set(our.map((u) => u.type))];
   showModal(
-    `<div class="eyebrow">THE FIELD FALLS SILENT</div><h1>${won ? 'Victory' : 'Defeat'}</h1><p>${won ? 'The road belongs to your company.' : 'Your company is scattered. Survivors will return home after capture and ransom.'}</p><div class="stats"><div class="stat"><span>YOUR CASUALTIES</span><strong>${lost}</strong></div><div class="stat"><span>${won ? 'RECOVERED CROWNS' : 'RANSOM'}</span><strong>${won ? battle.enemyCount * 12 : '35% of gold'}</strong></div></div><p class="muted" style="margin-top:20px">Casualties may be wounded or killed. Your hero and companions survive this chapter. Surviving soldiers retain their names and gain experience.</p><div class="dialog-actions"><button class="primary" data-action="resolve">Return to campaign</button></div>`,
+    `<div class="eyebrow">THE FIELD FALLS SILENT</div><h1>${won ? 'Victory' : 'Defeat'}</h1><p class="muted">${won ? 'Your company holds the field.' : 'The survivors gather after a bitter defeat.'}</p><table class="battle-ledger"><thead><tr><th>Troop</th><th>Deployed</th><th>Standing</th><th>Down</th><th>Kills</th></tr></thead><tbody>${groups
+      .map((type) => {
+        const units = our.filter((u) => u.type === type);
+        return `<tr><td>${TYPES[type].label}</td><td>${units.length}</td><td>${units.filter((u) => u.hp > 0).length}</td><td>${units.filter((u) => u.hp <= 0).length}</td><td>${units.reduce((n, u) => n + u.kills, 0)}</td></tr>`;
+      })
+      .join(
+        '',
+      )}</tbody></table><div class="ledger-stats">${won ? `<div class="ledger-stat"><small>Recovered crowns</small><strong>${battle.enemyCount * 12}</strong></div>` : '<div class="ledger-stat"><small>Ransom</small><strong>35% of treasury</strong></div>'}<div class="ledger-stat"><small>Downed soldiers</small><strong>${lost}</strong></div></div><p class="muted">Downed soldiers may be wounded or killed. Your hero and companions survive this chapter. The survivors retain their names, equipment and experience.</p><div class="dialog-actions"><button class="primary" data-action="resolve">Return to campaign</button></div>`,
     'result',
   );
 }
@@ -320,12 +391,31 @@ document.addEventListener('submit', (e) => {
   save(true);
   updateUI();
 });
+document.addEventListener('input', (e) => {
+  if (e.target.id === 'encyclopedia-search') {
+    ui.search = e.target.value;
+    ui.entity = '';
+    renderFeature();
+  }
+  if (e.target.id === 'hero-name') ui.creation.name = e.target.value;
+  if (e.target.id === 'world-seed') ui.creation.seed = e.target.value;
+});
 document.addEventListener('change', (e) => {
+  if (e.target.id === 'creation-culture') {
+    ui.creation.culture = Number(e.target.value);
+    renderFeature();
+  }
+  if (e.target.id === 'creation-sex') {
+    ui.creation.sex = e.target.value;
+    renderFeature();
+  }
+
   if (e.target.id === 'leader-formation') {
     const id = e.target.dataset.person;
     for (const f of Object.keys(state.formationLeaders))
       if (state.formationLeaders[f] === id) delete state.formationLeaders[f];
     if (e.target.value) state.formationLeaders[e.target.value] = id;
+    save(true);
     toast('Command assignment updated.');
   }
   if (e.target.id === 'hero-attachment' && battle) {
@@ -337,6 +427,10 @@ document.addEventListener('change', (e) => {
 document.addEventListener('click', (e) => {
   const el = e.target.closest('button');
   if (!el || el.disabled) return;
+  if (el.dataset.tab === 'party') {
+    openFeature('company');
+    return;
+  }
   if (el.dataset.tab) {
     if (battle) {
       toast('Finish the battle to open the campaign.');
@@ -350,6 +444,212 @@ document.addEventListener('click', (e) => {
     id = el.dataset.id;
   if (!a) return;
   const t = state.settlements.find((t) => t.id === state.visiting);
+  if (a.startsWith('ui-')) {
+    if (battle) return;
+    switch (a) {
+      case 'ui-close':
+        if (ui.page === 'creation' && !hasCampaign) return;
+        if (state.visiting && ui.page !== 'settlement') {
+          ui.settlement = 'overview';
+          openFeature('settlement');
+        } else {
+          if (state.visiting) {
+            state.mode = 'campaign';
+            state.visiting = null;
+            save(true);
+          }
+          closeModal();
+        }
+        break;
+      case 'ui-company':
+        openFeature('company');
+        break;
+      case 'ui-group':
+        ui.group = ui.group === id ? '' : id;
+        renderFeature();
+        break;
+      case 'ui-person':
+        ui.person = id;
+        renderFeature();
+        break;
+      case 'ui-character':
+        character(id || state.heroId);
+        break;
+      case 'ui-character-tab':
+        ui.personTab = id;
+        renderFeature();
+        break;
+      case 'ui-talent': {
+        const person = state.party.find((p) => p.id === (ui.person || state.heroId));
+        if (person && learnTalent(person, id)) {
+          save(true);
+          toast('Talent learned.');
+        }
+        renderFeature();
+        break;
+      }
+      case 'ui-equip':
+        if (equipItem(state, ui.person || state.heroId, id)) {
+          save(true);
+          toast('Equipment updated.');
+        }
+        renderFeature();
+        break;
+      case 'ui-unequip':
+        unequipItem(state, ui.person || state.heroId, id);
+        save(true);
+        renderFeature();
+        break;
+      case 'ui-settlement-tab':
+        ui.settlement = id;
+        renderFeature();
+        break;
+      case 'ui-market-category':
+        ui.category = id;
+        renderFeature();
+        break;
+      case 'ui-trade-add': {
+        if (!t || !ITEMS[id]) break;
+        const direction = Number(el.dataset.direction),
+          old = ui.tradeCart[id] || 0,
+          limit = direction > 0 ? marketAmount(t, id) : amount(state, id);
+        ui.tradeCart[id] = Math.max(
+          -amount(state, id),
+          Math.min(marketAmount(t, id), old + direction * Math.min(e.shiftKey ? 5 : 1, limit)),
+        );
+        renderFeature();
+        break;
+      }
+      case 'ui-trade-clear':
+        delete ui.tradeCart[id];
+        renderFeature();
+        break;
+      case 'ui-trade-reset':
+        ui.tradeCart = {};
+        renderFeature();
+        break;
+      case 'ui-trade-confirm':
+        if (t && trade(state, t, ui.tradeCart)) {
+          ui.tradeCart = {};
+          save(true);
+          toast('Trade completed.');
+        } else toast('The offer is no longer available.');
+        renderFeature();
+        break;
+      case 'ui-ransom':
+        if (t) {
+          const n = ransomPrisoners(state, t);
+          toast(n ? `${n} prisoners ransomed.` : 'No affordable ransom available.');
+          save(true);
+          renderFeature();
+        }
+        break;
+      case 'ui-supply':
+        if (t) {
+          if (!supplyAction(state, t)) toast('Check provisions and the settlement treasury.');
+          save(true);
+          renderFeature();
+        }
+        break;
+      case 'ui-diplomacy':
+        if (id != null && id !== '') ui.faction = Number(id);
+        ui.proposal = null;
+        openFeature('diplomacy');
+        break;
+      case 'ui-faction':
+        ui.faction = Number(id);
+        ui.proposal = null;
+        renderFeature();
+        break;
+      case 'ui-proposal':
+        ui.proposal = id;
+        renderFeature();
+        break;
+      case 'ui-proposal-cancel':
+        ui.proposal = null;
+        renderFeature();
+        break;
+      case 'ui-proposal-confirm': {
+        if (diplomaticAction(state, ui.faction, ui.proposal)) {
+          toast('Agreement recorded.');
+          ui.proposal = null;
+          if (t && !canVisit(state, t)) {
+            state.visiting = null;
+            state.mode = 'campaign';
+          }
+          save(true);
+        } else toast('The proposal requirements are not met.');
+        renderFeature();
+        break;
+      }
+      case 'ui-encyclopedia':
+        openFeature('encyclopedia');
+        break;
+      case 'ui-encyclopedia-tab':
+        ui.encyclopedia = id;
+        ui.entity = '';
+        ui.search = '';
+        renderFeature();
+        break;
+      case 'ui-entity':
+        ui.entity = id;
+        renderFeature();
+        break;
+      case 'ui-encyclopedia-entity':
+        ui.entity = id;
+        ui.encyclopedia = id.startsWith('person:')
+          ? 'people'
+          : id.startsWith('faction:')
+            ? 'kingdoms'
+            : 'settlements';
+        ui.search = '';
+        openFeature('encyclopedia');
+        break;
+      case 'ui-locate': {
+        const town = state.settlements.find((t) => t.id === id);
+        if (town) {
+          if (state.visiting) {
+            state.mode = 'campaign';
+            state.visiting = null;
+          }
+          closeModal();
+          tab = 'world';
+          state.selectedSettlement = town.id;
+          renderer.camera.x = town.x;
+          renderer.camera.y = town.y;
+          toast(town.name + ' located.');
+        }
+        break;
+      }
+      case 'ui-origin':
+        ui.creation.choices[ui.creation.step - 1] = id;
+        renderFeature();
+        break;
+      case 'ui-creation-next':
+        ui.creation.step = Math.min(5, ui.creation.step + 1);
+        renderFeature();
+        break;
+      case 'ui-creation-back':
+        ui.creation.step = Math.max(0, ui.creation.step - 1);
+        renderFeature();
+        break;
+      case 'ui-create': {
+        const c = ui.creation;
+        state = newCampaign(c.seed || 'The Long March', c.name || 'Wanderer', c.choices[0]);
+        applyBackground(state, c.choices, c.culture, c.sex);
+        battle = null;
+        tab = 'world';
+        hasCampaign = true;
+        renderer.center(state);
+        state.selectedSettlement = state.homeId;
+        closeModal();
+        save(true);
+        break;
+      }
+    }
+    updateUI();
+    return;
+  }
   switch (a) {
     case 'close':
       closeModal();
@@ -389,7 +689,7 @@ document.addEventListener('click', (e) => {
       break;
     }
     case 'party':
-      tab = 'party';
+      openFeature('company');
       break;
     case 'visit': {
       const town = state.settlements.find((t) => t.id === id);
@@ -606,12 +906,13 @@ modal.addEventListener('cancel', (e) => {
     e.preventDefault();
     return;
   }
-  if (modalKind === 'settlement') {
+  if (state.mode === 'settlement') {
     state.mode = 'campaign';
     state.visiting = null;
     save(true);
   }
   modalKind = '';
+  ui.page = '';
   updateUI();
 });
 $('#save-btn').onclick = () => save();

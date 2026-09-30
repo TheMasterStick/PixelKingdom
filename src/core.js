@@ -144,7 +144,7 @@ export function createPerson(s, type = 'recruit', culture = 0) {
     skillPoints: 0,
     talentPoints: 0,
     skills: { martial: 0, leadership: type === 'companion' ? 1 : 0, scouting: 0 },
-    talents: { vigor: 0, inspiration: 0 },
+    talents: { vigor: 0, inspiration: 0, shieldcraft: 0, drill: 0, pathfinder: 0, medicine: 0 },
     traits: [['Steadfast', 'Ambitious', 'Cautious', 'Bold'][index % 4]],
     health: 100,
     wounded: false,
@@ -169,7 +169,12 @@ export function stats(p) {
     ...t,
     hp: t.hp + (p.talents?.vigor || 0) * 18,
     damage:
-      t.damage + (p.skills?.martial || 0) * 2 + (p.equipment?.weapon === 'Tempered sword' ? 5 : 0),
-    armor: t.armor + (p.equipment?.armor === 'Mail hauberk' ? 4 : 0),
+      t.damage +
+      (p.skills?.martial || 0) * 2 +
+      ({ 'Tempered sword': 5, 'Bearded axe': 3 }[p.equipment?.weapon] || 0),
+    armor:
+      t.armor +
+      ({ 'Mail hauberk': 4, 'Quilted gambeson': 2 }[p.equipment?.armor] || 0) +
+      (p.talents?.shieldcraft || 0) * 2,
   };
 }
