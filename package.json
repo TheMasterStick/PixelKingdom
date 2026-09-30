@@ -1,0 +1,22 @@
+{
+  "name": "pixelkingdom",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Single-player medieval campaign and formation tactics prototype",
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test tests/*.test.js",
+    "benchmark": "node tests/benchmark.js",
+    "dev": "vite --host 0.0.0.0 --port 4173",
+    "build": "vite build",
+    "format": "prettier --write src tests index.html style.css server.mjs vite.config.js"
+  },
+  "engines": {
+    "node": ">=20.19"
+  },
+  "devDependencies": {
+    "prettier": "^3.9.9",
+    "vite": "^8.3.1"
+  }
+}

@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#17201f" />
+    <title>PixelKingdom — The Long March</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header>
+      <a class="brand" href="./"
+        ><span class="crest">♜</span><span>PIXELKINGDOM<small>THE LONG MARCH</small></span></a
+      >
+      <nav aria-label="Campaign views">
+        <button data-tab="world" class="active">Campaign</button
+        ><button data-tab="party">Company <span id="party-count">1</span></button
+        ><button data-tab="journal">Chronicle</button>
+      </nav>
+      <div class="header-actions">
+        <span class="build">FIRST CHAPTER · 0.1</span
+        ><button id="save-btn" class="quiet">Save</button
+        ><button id="menu-btn" class="quiet">Menu</button>
+      </div>
+    </header>
+    <main>
+      <aside id="left-panel"></aside>
+      <section id="stage">
+        <canvas
+          id="game"
+          aria-label="Campaign map. Click a location to travel. Use the surrounding controls for settlements and battles."
+          tabindex="0"
+        ></canvas>
+        <div class="map-top">
+          <div id="location-label"></div>
+          <div class="map-buttons">
+            <button id="zoom-out" title="Zoom out">−</button
+            ><button id="zoom-in" title="Zoom in">+</button><button id="center-btn">Center</button>
+          </div>
+        </div>
+        <div id="map-caption"></div>
+        <div id="map-bottom"></div>
+        <div id="overlay-view" hidden></div>
+      </section>
+      <aside id="right-panel"></aside>
+    </main>
+    <footer>
+      <span id="status">A world waiting for your story.</span
+      ><span id="footer-help">Scroll to zoom · Right-drag to pan</span>
+    </footer>
+    <dialog id="modal"></dialog>
+    <div id="toast" role="status"></div>
+    <input type="file" id="import-save" accept=".json" hidden />
+    <script type="module" src="src/app.js"></script>
+  </body>
+</html>
